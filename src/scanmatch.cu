@@ -257,12 +257,6 @@ __global__ void kernUpdatePos(int N, float dt, glm::vec3 *pos, glm::vec3 *vel) {
   pos[index] = thisPos;
 }
 
-// LOOK-2.1 Consider this method of computing a 1D index from a 3D grid index.
-// LOOK-2.3 Looking at this method, what would be the most memory efficient
-//          order for iterating over neighboring grid cells?
-//          for(x)
-//            for(y)
-//             for(z)? Or some other order?
 __device__ int gridIndex3Dto1D(int x, int y, int z, int gridResolution) {
   return x + y * gridResolution + z * gridResolution * gridResolution;
 }
@@ -270,27 +264,13 @@ __device__ int gridIndex3Dto1D(int x, int y, int z, int gridResolution) {
 __global__ void kernComputeIndices(int N, int gridResolution,
   glm::vec3 gridMin, float inverseCellWidth,
   glm::vec3 *pos, int *indices, int *gridIndices) {
-    // TODO-2.1
-    // - Label each boid with the index of its grid cell.
-    // - Set up a parallel array of integer indices as pointers to the actual
-    //   boid data in pos and vel1/vel2
-}
-
-// LOOK-2.1 Consider how this could be useful for indicating that a cell
-//          does not enclose any boids
-__global__ void kernResetIntBuffer(int N, int *intBuffer, int value) {
-  int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-  if (index < N) {
-    intBuffer[index] = value;
-  }
 }
 
 void ScanMatch::endSimulation() {
   cudaFree(dev_vel1);
   cudaFree(dev_vel2);
+  cudaFree(dev_rgb);
   cudaFree(dev_pos);
-
-  // TODO-2.1 TODO-2.3 - Free any additional buffers here.
 }
 
 void ScanMatch::unitTest() {

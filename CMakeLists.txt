@@ -64,14 +64,14 @@ include_directories(${GLM_INCLUDE_DIRS})
 set(headers
     src/cudaMat4.hpp
     src/glslUtility.hpp
-    src/kernel.h
+    src/scanmatch.h
     src/main.hpp
     src/utilityCore.hpp
     )
 
 set(sources
     src/glslUtility.cpp
-    src/kernel.cu
+    src/scanmatch.cu
     src/main.cpp
     src/utilityCore.cpp
     )

@@ -13,7 +13,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "utilityCore.hpp"
 #include "glslUtility.hpp"
-#include "kernel.h"
+#include "scanmatch.h"
 
 //====================================
 // GL Stuff

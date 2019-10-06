@@ -4,7 +4,7 @@
 #include <cmath>
 #include <glm/glm.hpp>
 #include "utilityCore.hpp"
-#include "kernel.h"
+#include "scanmatch.h"
 
 // LOOK-2.1 potentially useful for doing grid-based neighbor search
 #ifndef imax

@@ -11,7 +11,7 @@
 
 namespace ScanMatch {
     void initSimulation(int N);
-    void copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_velocities);
+    void copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb);
     void endSimulation();
     void unitTest();
 }

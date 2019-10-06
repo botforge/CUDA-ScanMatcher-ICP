@@ -39,18 +39,6 @@ void checkCUDAError(const char *msg, int line = -1) {
 /*! Block size used for CUDA kernel launch. */
 #define blockSize 128
 
-// LOOK-1.2 Parameters for the boids algorithm.
-// These worked well in our reference implementation.
-#define rule1Distance 5.0f
-#define rule2Distance 3.0f
-#define rule3Distance 5.0f
-
-#define rule1Scale 0.01f
-#define rule2Scale 0.1f
-#define rule3Scale 0.1f
-
-#define maxSpeed 1.0f
-
 /*! Size of the starting area in simulation space. */
 #define scene_scale 100.0f
 
@@ -63,25 +51,6 @@ dim3 threadsPerBlock(blockSize);
 
 glm::vec3 *dev_pos;
 glm::vec3 *dev_rgb;
-glm::vec3 *dev_vel1;
-glm::vec3 *dev_vel2;
-
-// LOOK-2.1 - these are NOT allocated for you. You'll have to set up the thrust
-// pointers on your own too.
-
-int *dev_particleArrayIndices; // What index in dev_pos and dev_velX represents this particle?
-int *dev_particleGridIndices; // What grid cell is this particle in?
-thrust::device_ptr<int> dev_thrust_particleArrayIndices;
-thrust::device_ptr<int> dev_thrust_particleGridIndices;
-
-int *dev_gridCellStartIndices; 
-int *dev_gridCellEndIndices;  
-
-int gridCellCount;
-int gridSideCount;
-float gridCellWidth;
-float gridInverseCellWidth;
-glm::vec3 gridMinimum;
 
 /******************
 * initSimulation *
@@ -129,19 +98,11 @@ void ScanMatch::initSimulation(int N) {
   numObjects = N;
   dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 
-  // LOOK-1.2 - This is basic CUDA memory management and error checking.
-  // Don't forget to cudaFree in  Boids::endSimulation.
   cudaMalloc((void**)&dev_pos, N * sizeof(glm::vec3));
   checkCUDAErrorWithLine("cudaMalloc dev_pos failed!");
 
   cudaMalloc((void**)&dev_rgb, N * sizeof(glm::vec3));
   checkCUDAErrorWithLine("cudaMalloc dev_rgb failed!");
-
-  cudaMalloc((void**)&dev_vel1, N * sizeof(glm::vec3));
-  checkCUDAErrorWithLine("cudaMalloc dev_vel1 failed!");
-
-  cudaMalloc((void**)&dev_vel2, N * sizeof(glm::vec3));
-  checkCUDAErrorWithLine("cudaMalloc dev_vel2 failed!");
 
   kernGenerateRandomPosArray<<<fullBlocksPerGrid, blockSize>>>(1, numObjects,
     dev_pos, scene_scale);
@@ -196,11 +157,11 @@ __global__ void kernCopyVelocitiesToVBO(int N, glm::vec3 *vel, float *vbo, float
 /**
 * Wrapper for call to the kernCopyboidsToVBO CUDA kernel.
 */
-void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_velocities) {
+void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb) {
   dim3 fullBlocksPerGrid((numObjects + blockSize - 1) / blockSize);
 
   kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, dev_pos, vbodptr_positions, scene_scale);
-  kernCopyVelocitiesToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, dev_vel1, vbodptr_velocities, scene_scale);
+  kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, dev_rgb, vbodptr_rgb, scene_scale);
 
   checkCUDAErrorWithLine("copyScanMatchToVBO failed!");
 
@@ -267,8 +228,6 @@ __global__ void kernComputeIndices(int N, int gridResolution,
 }
 
 void ScanMatch::endSimulation() {
-  cudaFree(dev_vel1);
-  cudaFree(dev_vel2);
   cudaFree(dev_rgb);
   cudaFree(dev_pos);
 }

@@ -52,6 +52,9 @@ dim3 threadsPerBlock(blockSize);
 glm::vec3 *dev_pos;
 glm::vec3 *dev_rgb;
 
+pointcloud target_pc;
+pointcloud src_pc;
+
 /******************
 * initSimulation *
 ******************/

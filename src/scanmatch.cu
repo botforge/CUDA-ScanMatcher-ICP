@@ -91,6 +91,16 @@ __global__ void kernGenerateRandomPosArray(int time, int N, glm::vec3 * arr, flo
   }
 }
 
+__global__ void kernSetBaseRGB(int time, int N, glm::vec3 * arr, glm::vec3 baseRGB) {
+  int index = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (index < N) {
+    glm::vec3 rand = generateRandomVec3(time, index);
+    arr[index].x = baseRGB.r;
+    arr[index].y = baseRGB.g;
+    arr[index].z = baseRGB.b;
+  }
+}
+
 /**
 * Initialize memory, update some globals
 */
@@ -107,6 +117,10 @@ void ScanMatch::initSimulation(int N) {
   kernGenerateRandomPosArray<<<fullBlocksPerGrid, blockSize>>>(1, numObjects,
     dev_pos, scene_scale);
   checkCUDAErrorWithLine("kernGenerateRandomPosArray failed!");
+
+  kernSetBaseRGB<<<fullBlocksPerGrid, blockSize>>>(1, numObjects,
+    dev_rgb, glm::vec3(0.f, 1.0f, 0.f));
+  checkCUDAErrorWithLine("kernSetBaseRGB failed!");
 
   cudaDeviceSynchronize();
 }

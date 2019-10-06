@@ -66,7 +66,7 @@ set(headers
     src/glslUtility.hpp
     src/scanmatch.h
     src/main.hpp
-    src/pointcloud.hpp
+    src/pointcloud.h
     src/utilityCore.hpp
     )
 
@@ -74,7 +74,7 @@ set(sources
     src/glslUtility.cpp
     src/scanmatch.cu
     src/main.cpp
-    src/pointcloud.cpp
+    src/pointcloud.cu
     src/utilityCore.cpp
     )
 

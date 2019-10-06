@@ -61,33 +61,22 @@ void checkCUDAError(const char *msg, int line = -1) {
 int numObjects;
 dim3 threadsPerBlock(blockSize);
 
-// LOOK-1.2 - These buffers are here to hold all your boid information.
-// These get allocated for you in Boids::initSimulation.
-// Consider why you would need two velocity buffers in a simulation where each
-// boid cares about its neighbors' velocities.
-// These are called ping-pong buffers.
 glm::vec3 *dev_pos;
+glm::vec3 *dev_rgb;
 glm::vec3 *dev_vel1;
 glm::vec3 *dev_vel2;
 
 // LOOK-2.1 - these are NOT allocated for you. You'll have to set up the thrust
 // pointers on your own too.
 
-// For efficient sorting and the uniform grid. These should always be parallel.
 int *dev_particleArrayIndices; // What index in dev_pos and dev_velX represents this particle?
 int *dev_particleGridIndices; // What grid cell is this particle in?
-// needed for use with thrust
 thrust::device_ptr<int> dev_thrust_particleArrayIndices;
 thrust::device_ptr<int> dev_thrust_particleGridIndices;
 
-int *dev_gridCellStartIndices; // What part of dev_particleArrayIndices belongs
-int *dev_gridCellEndIndices;   // to this cell?
+int *dev_gridCellStartIndices; 
+int *dev_gridCellEndIndices;  
 
-// TODO-2.3 - consider what additional buffers you might need to reshuffle
-// the position and velocity data to be coherent within cells.
-
-// LOOK-2.1 - Grid parameters based on simulation parameters.
-// These are automatically computed for you in Boids::initSimulation
 int gridCellCount;
 int gridSideCount;
 float gridCellWidth;
@@ -145,30 +134,19 @@ void ScanMatch::initSimulation(int N) {
   cudaMalloc((void**)&dev_pos, N * sizeof(glm::vec3));
   checkCUDAErrorWithLine("cudaMalloc dev_pos failed!");
 
+  cudaMalloc((void**)&dev_rgb, N * sizeof(glm::vec3));
+  checkCUDAErrorWithLine("cudaMalloc dev_rgb failed!");
+
   cudaMalloc((void**)&dev_vel1, N * sizeof(glm::vec3));
   checkCUDAErrorWithLine("cudaMalloc dev_vel1 failed!");
 
   cudaMalloc((void**)&dev_vel2, N * sizeof(glm::vec3));
   checkCUDAErrorWithLine("cudaMalloc dev_vel2 failed!");
 
-  // LOOK-1.2 - This is a typical CUDA kernel invocation.
   kernGenerateRandomPosArray<<<fullBlocksPerGrid, blockSize>>>(1, numObjects,
     dev_pos, scene_scale);
   checkCUDAErrorWithLine("kernGenerateRandomPosArray failed!");
 
-  // LOOK-2.1 computing grid params
-  gridCellWidth = 2.0f * std::max(std::max(rule1Distance, rule2Distance), rule3Distance);
-  int halfSideCount = (int)(scene_scale / gridCellWidth) + 1;
-  gridSideCount = 2 * halfSideCount;
-
-  gridCellCount = gridSideCount * gridSideCount * gridSideCount;
-  gridInverseCellWidth = 1.0f / gridCellWidth;
-  float halfGridWidth = gridCellWidth * halfSideCount;
-  gridMinimum.x -= halfGridWidth;
-  gridMinimum.y -= halfGridWidth;
-  gridMinimum.z -= halfGridWidth;
-
-  // TODO-2.1 TODO-2.3 - Allocate additional buffers here.
   cudaDeviceSynchronize();
 }
 
@@ -189,6 +167,17 @@ __global__ void kernCopyPositionsToVBO(int N, glm::vec3 *pos, float *vbo, float 
     vbo[4 * index + 0] = pos[index].x * c_scale;
     vbo[4 * index + 1] = pos[index].y * c_scale;
     vbo[4 * index + 2] = pos[index].z * c_scale;
+    vbo[4 * index + 3] = 1.0f;
+  }
+}
+
+__global__ void kernCopyRGBToVBO(int N, glm::vec3 *rgb, float *vbo, float s_scale) {
+  int index = threadIdx.x + (blockIdx.x * blockDim.x);
+
+  if (index < N) {
+    vbo[4 * index + 0] = rgb[index].x + 0.3f;
+    vbo[4 * index + 1] = rgb[index].y + 0.3f;
+    vbo[4 * index + 2] = rgb[index].z + 0.3f;
     vbo[4 * index + 3] = 1.0f;
   }
 }

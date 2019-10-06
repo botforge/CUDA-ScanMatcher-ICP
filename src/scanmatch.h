@@ -11,9 +11,6 @@
 
 namespace ScanMatch {
     void initSimulation(int N);
-    void stepSimulationNaive(float dt);
-    void stepSimulationScatteredGrid(float dt);
-    void stepSimulationCoherentGrid(float dt);
     void copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_velocities);
 
     void endSimulation();

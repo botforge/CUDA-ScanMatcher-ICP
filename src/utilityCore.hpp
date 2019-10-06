@@ -1,11 +1,3 @@
-/**
- * @file      utilityCore.hpp
- * @brief     UTILITYCORE: A collection/kitchen sink of generally useful functions
- * @authors   Yining Karl Li
- * @date      2012
- * @copyright Yining Karl Li
- */
-
 #pragma once
 
 #include <algorithm>

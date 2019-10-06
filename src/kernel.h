@@ -9,12 +9,12 @@
 #include <cmath>
 #include <vector>
 
-namespace Boids {
+namespace ScanMatch {
     void initSimulation(int N);
     void stepSimulationNaive(float dt);
     void stepSimulationScatteredGrid(float dt);
     void stepSimulationCoherentGrid(float dt);
-    void copyBoidsToVBO(float *vbodptr_positions, float *vbodptr_velocities);
+    void copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_velocities);
 
     void endSimulation();
     void unitTest();

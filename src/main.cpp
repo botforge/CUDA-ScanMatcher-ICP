@@ -17,11 +17,11 @@ const float DT = 0.2f;
 * C main function.
 */
 int main(int argc, char* argv[]) {
-  projectName = "565 CUDA Intro: Boids";
+  projectName = "CUDA Scan Matching";
 
   if (init(argc, argv)) {
     mainLoop();
-    Boids::endSimulation();
+    ScanMatch::endSimulation();
     return 0;
   } else {
     return 1;
@@ -101,7 +101,7 @@ bool init(int argc, char **argv) {
   cudaGLRegisterBufferObject(boidVBO_velocities);
 
   // Initialize N-body simulation
-  Boids::initSimulation(N_FOR_VIS);
+  ScanMatch::initSimulation(N_FOR_VIS);
 
   updateCamera();
 
@@ -187,17 +187,10 @@ void initShaders(GLuint * program) {
     cudaGLMapBufferObject((void**)&dptrVertPositions, boidVBO_positions);
     cudaGLMapBufferObject((void**)&dptrVertVelocities, boidVBO_velocities);
 
-    // execute the kernel
-    #if UNIFORM_GRID && COHERENT_GRID
-    Boids::stepSimulationCoherentGrid(DT);
-    #elif UNIFORM_GRID
-    Boids::stepSimulationScatteredGrid(DT);
-    #else
-    Boids::stepSimulationNaive(DT);
-    #endif
+    // execute the kernel call Step Here
 
     #if VISUALIZE
-    Boids::copyBoidsToVBO(dptrVertPositions, dptrVertVelocities);
+    ScanMatch::copyPointCloudToVBO(dptrVertPositions, dptrVertVelocities);
     #endif
     // unmap buffer object
     cudaGLUnmapBufferObject(boidVBO_positions);
@@ -209,8 +202,7 @@ void initShaders(GLuint * program) {
     double timebase = 0;
     int frame = 0;
 
-    Boids::unitTest(); // LOOK-1.2 We run some basic example code to make sure
-                       // your CUDA development setup is ready to go.
+    ScanMatch::unitTest(); 
 
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents();

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(cis565_boids)
+project(cis565_ScanMatching)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 

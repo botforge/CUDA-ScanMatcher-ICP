@@ -136,7 +136,7 @@ __global__ void kernGenerateRandomPosArray(int time, int N, glm::vec3 * arr, flo
 /**
 * Initialize memory, update some globals
 */
-void Boids::initSimulation(int N) {
+void ScanMatch::initSimulation(int N) {
   numObjects = N;
   dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 
@@ -174,7 +174,7 @@ void Boids::initSimulation(int N) {
 
 
 /******************
-* copyBoidsToVBO *
+* copyPointCloudToVBO *
 ******************/
 
 /**
@@ -207,13 +207,13 @@ __global__ void kernCopyVelocitiesToVBO(int N, glm::vec3 *vel, float *vbo, float
 /**
 * Wrapper for call to the kernCopyboidsToVBO CUDA kernel.
 */
-void Boids::copyBoidsToVBO(float *vbodptr_positions, float *vbodptr_velocities) {
+void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_velocities) {
   dim3 fullBlocksPerGrid((numObjects + blockSize - 1) / blockSize);
 
   kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, dev_pos, vbodptr_positions, scene_scale);
   kernCopyVelocitiesToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, dev_vel1, vbodptr_velocities, scene_scale);
 
-  checkCUDAErrorWithLine("copyBoidsToVBO failed!");
+  checkCUDAErrorWithLine("copyScanMatchToVBO failed!");
 
   cudaDeviceSynchronize();
 }
@@ -346,12 +346,12 @@ __global__ void kernUpdateVelNeighborSearchCoherent(
 /**
 * Step the entire N-body simulation by `dt` seconds.
 */
-void Boids::stepSimulationNaive(float dt) {
+void ScanMatch::stepSimulationNaive(float dt) {
   // TODO-1.2 - use the kernels you wrote to step the simulation forward in time.
   // TODO-1.2 ping-pong the velocity buffers
 }
 
-void Boids::stepSimulationScatteredGrid(float dt) {
+void ScanMatch::stepSimulationScatteredGrid(float dt) {
   // TODO-2.1
   // Uniform Grid Neighbor search using Thrust sort.
   // In Parallel:
@@ -366,7 +366,7 @@ void Boids::stepSimulationScatteredGrid(float dt) {
   // - Ping-pong buffers as needed
 }
 
-void Boids::stepSimulationCoherentGrid(float dt) {
+void ScanMatch::stepSimulationCoherentGrid(float dt) {
   // TODO-2.3 - start by copying Boids::stepSimulationNaiveGrid
   // Uniform Grid Neighbor search using Thrust sort on cell-coherent data.
   // In Parallel:
@@ -384,7 +384,7 @@ void Boids::stepSimulationCoherentGrid(float dt) {
   // - Ping-pong buffers as needed. THIS MAY BE DIFFERENT FROM BEFORE.
 }
 
-void Boids::endSimulation() {
+void ScanMatch::endSimulation() {
   cudaFree(dev_vel1);
   cudaFree(dev_vel2);
   cudaFree(dev_pos);
@@ -392,7 +392,7 @@ void Boids::endSimulation() {
   // TODO-2.1 TODO-2.3 - Free any additional buffers here.
 }
 
-void Boids::unitTest() {
+void ScanMatch::unitTest() {
   // LOOK-1.2 Feel free to write additional tests here.
 
   // test unstable sort

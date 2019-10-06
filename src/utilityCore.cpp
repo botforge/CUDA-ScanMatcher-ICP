@@ -1,11 +1,3 @@
-/**
- * @file      utilityCore.cpp
- * @brief     UTILITYCORE: A collection/kitchen sink of generally useful functions
- * @authors   Yining Karl Li
- * @date      2012
- * @copyright Yining Karl Li
- */
-
 #include <iostream>
 #include <cstdio>
 #include <glm/gtc/matrix_transform.hpp>

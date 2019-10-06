@@ -1,13 +1,3 @@
-/**
- * @file      cudaMat4.h
- * @brief     This file includes code from:
- *            Yining Karl Li's TAKUA Render, a massively parallel pathtracing renderer:
- *            http://www.yiningkarlli.com
- * @authors   Yining Karl Li
- * @date      2012
- * @copyright Yining Karl Li
- */
-
 #pragma once
 
 #include <glm/glm.hpp>

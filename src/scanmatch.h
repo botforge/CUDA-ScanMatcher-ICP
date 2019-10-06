@@ -8,6 +8,7 @@
 #include <cuda.h>
 #include <cmath>
 #include <vector>
+#include "pointcloud.hpp"
 
 namespace ScanMatch {
     void initSimulation(int N);

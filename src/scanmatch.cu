@@ -98,70 +98,12 @@ void ScanMatch::initSimulation(int N) {
   //Setup and initialize source pointcloud
   src_pc = new pointcloud(false, numObjects);
   src_pc->initCPU();
-
-  /*
-  dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
-
-  cudaMalloc((void**)&dev_pos, N * sizeof(glm::vec3));
-  checkCUDAErrorWithLine("cudaMalloc dev_pos failed!");
-
-  cudaMalloc((void**)&dev_rgb, N * sizeof(glm::vec3));
-  checkCUDAErrorWithLine("cudaMalloc dev_rgb failed!");
-
-  kernGenerateRandomPosArray<<<fullBlocksPerGrid, blockSize>>>(1, numObjects,
-    dev_pos, scene_scale);
-  checkCUDAErrorWithLine("kernGenerateRandomPosArray failed!");
-
-  kernSetBaseRGB<<<fullBlocksPerGrid, blockSize>>>(1, numObjects,
-    dev_rgb, glm::vec3(0.1f, 0.8f, 0.5f));
-  checkCUDAErrorWithLine("kernSetBaseRGB failed!");
-
-  cudaDeviceSynchronize();
-  */
 }
 
 
 /******************
 * copyPointCloudToVBO *
 ******************/
-
-/**
-* Copy the boid positions into the VBO so that they can be drawn by OpenGL.
-*/
-__global__ void kernCopyPositionsToVBO(int N, glm::vec3 *pos, float *vbo, float s_scale) {
-  int index = threadIdx.x + (blockIdx.x * blockDim.x);
-
-  float c_scale = -1.0f / s_scale;
-
-  if (index < N) {
-    vbo[4 * index + 0] = pos[index].x * c_scale;
-    vbo[4 * index + 1] = pos[index].y * c_scale;
-    vbo[4 * index + 2] = pos[index].z * c_scale;
-    vbo[4 * index + 3] = 1.0f;
-  }
-}
-
-__global__ void kernCopyRGBToVBO(int N, glm::vec3 *rgb, float *vbo, float s_scale) {
-  int index = threadIdx.x + (blockIdx.x * blockDim.x);
-
-  if (index < N) {
-    vbo[4 * index + 0] = rgb[index].x + 0.3f;
-    vbo[4 * index + 1] = rgb[index].y + 0.3f;
-    vbo[4 * index + 2] = rgb[index].z + 0.3f;
-    vbo[4 * index + 3] = 1.0f;
-  }
-}
-
-__global__ void kernCopyVelocitiesToVBO(int N, glm::vec3 *vel, float *vbo, float s_scale) {
-  int index = threadIdx.x + (blockIdx.x * blockDim.x);
-
-  if (index < N) {
-    vbo[4 * index + 0] = vel[index].x + 0.3f;
-    vbo[4 * index + 1] = vel[index].y + 0.3f;
-    vbo[4 * index + 2] = vel[index].z + 0.3f;
-    vbo[4 * index + 3] = 1.0f;
-  }
-}
 
 /**
 * Wrapper for call to the kernCopyboidsToVBO CUDA kernel.
@@ -171,10 +113,13 @@ void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb
 
   //IF CPU
   src_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
+
+  /*
   kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, src_pc->dev_pos, vbodptr_positions, scene_scale);
   kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, src_pc->dev_rgb, vbodptr_rgb, scene_scale);
   checkCUDAErrorWithLine("copyScanMatchToVBO failed!");
   cudaDeviceSynchronize();
+  */
 }
 
 

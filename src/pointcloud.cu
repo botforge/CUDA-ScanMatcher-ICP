@@ -5,6 +5,35 @@
 #define blockSize 128
 #define checkCUDAErrorWithLine(msg) checkCUDAError(msg, __LINE__)
 
+/**
+* Copy the Pointcloud Positions into the VBO so that they can be drawn by OpenGL.
+*/
+__global__ void kernCopyPositionsToVBO(int N, glm::vec3 *pos, float *vbo, float s_scale) {
+  int index = threadIdx.x + (blockIdx.x * blockDim.x);
+
+  float c_scale = -1.0f / s_scale;
+
+  if (index < N) {
+    vbo[4 * index + 0] = pos[index].x * c_scale;
+    vbo[4 * index + 1] = pos[index].y * c_scale;
+    vbo[4 * index + 2] = pos[index].z * c_scale;
+    vbo[4 * index + 3] = 1.0f;
+  }
+}
+/**
+* Copy the Pointcloud RGB's into the VBO so that they can be drawn by OpenGL.
+*/
+__global__ void kernCopyRGBToVBO(int N, glm::vec3 *rgb, float *vbo, float s_scale) {
+  int index = threadIdx.x + (blockIdx.x * blockDim.x);
+
+  if (index < N) {
+    vbo[4 * index + 0] = rgb[index].x + 0.3f;
+    vbo[4 * index + 1] = rgb[index].y + 0.3f;
+    vbo[4 * index + 2] = rgb[index].z + 0.3f;
+    vbo[4 * index + 3] = 1.0f;
+  }
+}
+
 pointcloud::pointcloud(): isTarget(false), N(500){
 	dev_pos = new glm::vec3[500];
 	dev_rgb = new glm::vec3[500];
@@ -57,10 +86,19 @@ void pointcloud::pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb
 	cudaMemcpy(tempRGB, dev_rgb, N * sizeof(glm::vec3), cudaMemcpyHostToDevice);
 	utilityCore::checkCUDAErrorWithLine("cudaMemcpy Pointcloud failed!");
 
-	//Now on Device
+	//Launching Kernels
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(N, tempPos, vbodptr_positions, s_scale);
+	kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(N, tempRGB, vbodptr_rgb, s_scale);
+	utilityCore::checkCUDAErrorWithLine("copyPointCloudToVBO failed!");
+	cudaDeviceSynchronize();
+
+	//Now on Flipping original pointer to device
 	dev_pos = tempPos;
 	dev_rgb = tempRGB;
 }
 
 pointcloud::~pointcloud() {
+	cudaFree(dev_pos);
+	cudaFree(dev_rgb);
 }

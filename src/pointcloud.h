@@ -16,7 +16,7 @@ public:
 
 	glm::vec3 *dev_pos;
 	glm::vec3 *dev_rgb;
-	bool isTarget;
+	bool isTarget; 
 	int N; //Number of points
 	
 	pointcloud();
@@ -25,10 +25,12 @@ public:
 	//CPU METHODS
 	void initCPU();
 	void buildSinusoidCPU();
+    void pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
 
 	//GPU METHODS
 	void initGPU();
 	void buildSinusoidGPU();
+    void pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
 
 	~pointcloud();
 };

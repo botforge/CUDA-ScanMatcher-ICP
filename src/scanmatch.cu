@@ -109,6 +109,11 @@ __global__ void kernSetBaseRGB(int time, int N, glm::vec3 * arr, glm::vec3 baseR
 */
 void ScanMatch::initSimulation(int N) {
   numObjects = N;
+
+  //Setup and initialize source pointcloud
+  src_pc.N = numObjects;
+  src_pc.initCPU();
+
   dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 
   cudaMalloc((void**)&dev_pos, N * sizeof(glm::vec3));
@@ -122,7 +127,7 @@ void ScanMatch::initSimulation(int N) {
   checkCUDAErrorWithLine("kernGenerateRandomPosArray failed!");
 
   kernSetBaseRGB<<<fullBlocksPerGrid, blockSize>>>(1, numObjects,
-    dev_rgb, glm::vec3(0.f, 1.0f, 0.f));
+    dev_rgb, glm::vec3(0.1f, 0.8f, 0.5f));
   checkCUDAErrorWithLine("kernSetBaseRGB failed!");
 
   cudaDeviceSynchronize();
@@ -177,11 +182,12 @@ __global__ void kernCopyVelocitiesToVBO(int N, glm::vec3 *vel, float *vbo, float
 void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb) {
   dim3 fullBlocksPerGrid((numObjects + blockSize - 1) / blockSize);
 
+  //src_pc.pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
+
   kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, dev_pos, vbodptr_positions, scene_scale);
   kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, dev_rgb, vbodptr_rgb, scene_scale);
 
   checkCUDAErrorWithLine("copyScanMatchToVBO failed!");
-
   cudaDeviceSynchronize();
 }
 

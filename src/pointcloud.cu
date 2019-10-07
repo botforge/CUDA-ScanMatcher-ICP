@@ -65,8 +65,8 @@ void pointcloud::initCPU() {
 void pointcloud::buildSinusoidCPU() {
 	float y_interval = 2.5 * PI / N;
 	for (int idx = 0; idx < N; idx++) {
-		dev_pos[idx] = glm::vec3(isTarget ? 0.5f : 1.5f, idx*y_interval, sin(idx*y_interval));
-		dev_rgb[idx] = isTarget? glm::vec3(0.f, 0.f, 0.f) : glm::vec3(0.1f, 0.8f, 0.5f);
+		dev_pos[idx] = glm::vec3(0.5f, idx*y_interval, sin(idx*y_interval));
+		dev_rgb[idx] = glm::vec3(0.1f, 0.8f, 0.5f);
 	}
 }
 
@@ -78,7 +78,7 @@ void pointcloud::buildSinusoidCPU() {
 void pointcloud::pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale) {
 	glm::vec3* tempPos;
 	glm::vec3 * tempRGB;
-	int vbo_offset = isTarget ? N : 0;
+	int vbo_offset = 0.0;
 
 	//Malloc Temporary Buffers
 	cudaMalloc((void**)&tempPos, N * sizeof(glm::vec3));

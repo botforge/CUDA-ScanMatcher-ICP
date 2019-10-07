@@ -52,8 +52,8 @@ dim3 threadsPerBlock(blockSize);
 glm::vec3 *dev_pos;
 glm::vec3 *dev_rgb;
 
-pointcloud target_pc;
-pointcloud src_pc;
+pointcloud* target_pc;
+pointcloud* src_pc;
 
 /******************
 * initSimulation *
@@ -111,8 +111,8 @@ void ScanMatch::initSimulation(int N) {
   numObjects = N;
 
   //Setup and initialize source pointcloud
-  src_pc.N = numObjects;
-  src_pc.initCPU();
+  src_pc = new pointcloud(false, numObjects);
+  src_pc->initCPU();
 
   dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 

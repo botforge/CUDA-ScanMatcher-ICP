@@ -21,7 +21,7 @@ pointcloud::pointcloud(bool target, int numPoints): isTarget(target), N(numPoint
  * Initialize and fills dev_pos and dev_rgb array in CPU
 */
 void pointcloud::initCPU() {
-	//buildSinusoidCPU();
+	buildSinusoidCPU();
 }
 
 /**

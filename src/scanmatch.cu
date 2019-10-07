@@ -77,8 +77,8 @@ void ScanMatch::initSimulation(int N) {
   numObjects = N;
 
   //Setup and initialize source and target pointcloud
-  //src_pc = new pointcloud(false, numObjects);
-  //src_pc->initCPU();
+  src_pc = new pointcloud(false, numObjects);
+  src_pc->initCPU();
 
   target_pc = new pointcloud(true, numObjects);
   target_pc->initCPU();
@@ -94,8 +94,8 @@ void ScanMatch::initSimulation(int N) {
 void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb) {
 
   //IF CPU
-  //src_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
-  target_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
+  src_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
+  target_pc->pointCloudToVBOCPU(vbodptr_positions + 4*numObjects, vbodptr_rgb + 4*numObjects, scene_scale);
 }
 
 
@@ -158,7 +158,7 @@ __global__ void kernComputeIndices(int N, int gridResolution,
 }
 
 void ScanMatch::endSimulation() {
-	//src_pc->~pointcloud();
+	src_pc->~pointcloud();
 	target_pc->~pointcloud();
 }
 

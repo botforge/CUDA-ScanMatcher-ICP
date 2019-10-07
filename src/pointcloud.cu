@@ -64,17 +64,36 @@ void pointcloud::initCPU() {
 */
 void pointcloud::buildSinusoidCPU() {
 	float y_interval = 2.5 * PI / N;
+
+	//RNG (Predetermine Rotation)
+	std::random_device rd;
+	std::mt19937 e2(rd());
+	std::uniform_real_distribution<float> u01(0, 0.1);
+	glm::vec3 r(0.1f, 0.2f, 0.3f);
+	float angle = -0.15f * PI;
+	glm::mat4 rotationMat = glm::rotate(angle, r);
+
 	for (int idx = 0; idx < N; idx++) {
 		glm::vec3 pos;
 		glm::vec3 rgb;
 		if (isTarget) { //Leave Original Pointcloud
 			pos = glm::vec3(0.7f, idx*y_interval, sin(idx*y_interval));
-			rgb = glm::vec3(0.9f, 0.9f, 0.9f);
-		}
-		else { //Add Noise, Rotation, Translation
-			pos = glm::vec3(0.7f, idx*y_interval, sin(idx*y_interval));
-			glm::vec3();
 			rgb = glm::vec3(0.f, 0.9f, 0.2f);
+
+			//Create & Apply Translation for Pointcloud Effect
+			glm::vec3 t(u01(e2), u01(e2), u01(e2));
+			pos += t;
+		}
+		else { //Add Multiplicative Noise, Rotation, Translation to OG
+			pos = glm::vec3(0.7f, idx*y_interval, sin(idx*y_interval));
+			rgb = glm::vec3(1.0f, 0.5f, 0.1f);
+
+			//Create Translation and Rotation
+			glm::vec3 t(u01(e2), u01(e2), u01(e2));
+
+			//Apply Translation and Rotation 
+			glm::vec3 rotated = glm::vec3(rotationMat * glm::vec4(pos, 1.0));
+			pos = rotated + t;
 		}
 		dev_pos[idx] = pos;
 		dev_rgb[idx] = rgb;

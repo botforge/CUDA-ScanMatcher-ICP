@@ -5,10 +5,12 @@
 #include <ostream>
 #include <iterator>
 #include <cuda.h>
+#include <random>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
+#include<glm/gtx/transform.hpp>
 #include "cudaMat4.hpp"
 
 #define PI                          3.1415926535897932384626422832795028841971

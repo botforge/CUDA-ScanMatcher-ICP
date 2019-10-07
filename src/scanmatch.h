@@ -9,6 +9,8 @@
 #include <cmath>
 #include <vector>
 #include "pointcloud.h"
+#include "utilityCore.hpp"
+
 
 namespace ScanMatch {
     void initSimulation(int N);

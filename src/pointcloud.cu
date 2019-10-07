@@ -1,6 +1,9 @@
+#pragma once
 #include "pointcloud.h"
+#include <cuda.h>
 
-
+#define blockSize 128
+#define checkCUDAErrorWithLine(msg) checkCUDAError(msg, __LINE__)
 
 pointcloud::pointcloud(): isTarget(false), N(500){
 	dev_pos = new glm::vec3[500];
@@ -36,23 +39,27 @@ void pointcloud::buildSinusoidCPU() {
 }
 
 /**
- * Copies dev_pos and dev_rgb into the VBO
+ * Copies dev_pos and dev_rgb into the VBO in the CPU implementation
+ * This assumes that dev_pos is already filled but is on CPU
+ * REALLY HACKY WAY TO DO IT
 */
 void pointcloud::pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale) {
-	float c_scale = -1.0f / s_scale;
-	for (int idx = 0; idx < N; ++idx) {
-		//Push Positions to VBO
-		vbodptr_positions[4 * idx + 0] = dev_pos[idx].x * c_scale;
-		vbodptr_positions[4 * idx + 1] = dev_pos[idx].y * c_scale;
-		vbodptr_positions[4 * idx + 2] = dev_pos[idx].z * c_scale;
-		vbodptr_positions[4 * idx + 3] = 1.0f;
+	glm::vec3* tempPos;
+	glm::vec3 * tempRGB;
 
-		//Push RGB to VBO
-		vbodptr_rgb[4 * idx + 0] = dev_rgb[idx].x + 0.3f;
-		vbodptr_rgb[4 * idx + 1] = dev_rgb[idx].y + 0.3f;
-		vbodptr_rgb[4 * idx + 2] = dev_rgb[idx].z + 0.3f;
-		vbodptr_rgb[4 * idx + 3] = 1.0f;
-	}
+	//Malloc Temporary Buffers
+	cudaMalloc((void**)&tempPos, N * sizeof(glm::vec3));
+	cudaMalloc((void**)&tempRGB, N * sizeof(glm::vec3));
+	utilityCore::checkCUDAErrorWithLine("cudaMalloc Pointcloud failed!");
+
+	//Memcpy dev_pos and dev_rgb into temporary buffers
+	cudaMemcpy(tempPos, dev_pos, N * sizeof(glm::vec3), cudaMemcpyHostToDevice);
+	cudaMemcpy(tempRGB, dev_rgb, N * sizeof(glm::vec3), cudaMemcpyHostToDevice);
+	utilityCore::checkCUDAErrorWithLine("cudaMemcpy Pointcloud failed!");
+
+	//Now on Device
+	dev_pos = tempPos;
+	dev_rgb = tempRGB;
 }
 
 pointcloud::~pointcloud() {

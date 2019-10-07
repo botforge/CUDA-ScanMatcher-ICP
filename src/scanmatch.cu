@@ -15,22 +15,7 @@
 #define imin( a, b ) ( ((a) < (b)) ? (a) : (b) )
 #endif
 
-#define checkCUDAErrorWithLine(msg) checkCUDAError(msg, __LINE__)
-
-/**
-* Check for CUDA errors; print and exit if there was a problem.
-*/
-void checkCUDAError(const char *msg, int line = -1) {
-  cudaError_t err = cudaGetLastError();
-  if (cudaSuccess != err) {
-    if (line >= 0) {
-      fprintf(stderr, "Line %d: ", line);
-    }
-    fprintf(stderr, "Cuda error: %s: %s.\n", msg, cudaGetErrorString(err));
-    exit(EXIT_FAILURE);
-  }
-}
-
+#define checkCUDAErrorWithLine(msg) utilityCore::checkCUDAError(msg, __LINE__)
 
 /*****************
 * Configuration *
@@ -114,6 +99,7 @@ void ScanMatch::initSimulation(int N) {
   src_pc = new pointcloud(false, numObjects);
   src_pc->initCPU();
 
+  /*
   dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 
   cudaMalloc((void**)&dev_pos, N * sizeof(glm::vec3));
@@ -131,6 +117,7 @@ void ScanMatch::initSimulation(int N) {
   checkCUDAErrorWithLine("kernSetBaseRGB failed!");
 
   cudaDeviceSynchronize();
+  */
 }
 
 
@@ -182,11 +169,10 @@ __global__ void kernCopyVelocitiesToVBO(int N, glm::vec3 *vel, float *vbo, float
 void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb) {
   dim3 fullBlocksPerGrid((numObjects + blockSize - 1) / blockSize);
 
-  //src_pc.pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
-
-  kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, dev_pos, vbodptr_positions, scene_scale);
-  kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, dev_rgb, vbodptr_rgb, scene_scale);
-
+  //IF CPU
+  src_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
+  kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, src_pc->dev_pos, vbodptr_positions, scene_scale);
+  kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, src_pc->dev_rgb, vbodptr_rgb, scene_scale);
   checkCUDAErrorWithLine("copyScanMatchToVBO failed!");
   cudaDeviceSynchronize();
 }

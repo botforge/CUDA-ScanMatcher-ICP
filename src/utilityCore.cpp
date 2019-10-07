@@ -4,6 +4,20 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include "utilityCore.hpp"
 
+/**
+* Check for CUDA errors; print and exit if there was a problem.
+*/
+void utilityCore::checkCUDAError(const char *msg, int line) {
+  cudaError_t err = cudaGetLastError();
+  if (cudaSuccess != err) {
+    if (line >= 0) {
+      fprintf(stderr, "Line %d: ", line);
+    }
+    fprintf(stderr, "Cuda error: %s: %s.\n", msg, cudaGetErrorString(err));
+    exit(EXIT_FAILURE);
+  }
+}
+
 float utilityCore::clamp(float f, float min, float max) {
     if (f < min) {
         return min;

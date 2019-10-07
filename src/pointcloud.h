@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <stdio.h>
 #include <cmath>
+#include <cuda.h>
 #include "utilityCore.hpp"
+#include "scanmatch.h"
 
 class pointcloud {
 public:

@@ -4,6 +4,7 @@
 #include <istream>
 #include <ostream>
 #include <iterator>
+#include <cuda.h>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -19,6 +20,7 @@
 #define ZERO_ABSORPTION_EPSILON     0.00001
 
 namespace utilityCore {
+extern void checkCUDAError(const char *msg, int line);
 extern float clamp(float f, float min, float max);
 extern bool replaceString(std::string& str, const std::string& from, const std::string& to);
 extern glm::vec3 clampRGB(glm::vec3 color);

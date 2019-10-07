@@ -24,8 +24,13 @@
 /*! Block size used for CUDA kernel launch. */
 #define blockSize 128
 
-/*! Size of the starting area in simulation space. */
-#define scene_scale 100.0f
+/*! Size of the starting area in simulation space. 
+ * FOR SINE TEST: 2.f
+ * FOR ELEPHANT OBJ: 
+ * FOR WAYMO DATASET: 
+*/
+
+#define scene_scale 2.f
 
 /***********************************************
 * Kernel state (pointers are device pointers) *
@@ -66,40 +71,18 @@ __host__ __device__ glm::vec3 generateRandomVec3(float time, int index) {
 }
 
 /**
-* LOOK-1.2 - This is a basic CUDA kernel.
-* CUDA kernel for generating boids with a specified mass randomly around the star.
-*/
-__global__ void kernGenerateRandomPosArray(int time, int N, glm::vec3 * arr, float scale) {
-  int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-  if (index < N) {
-    glm::vec3 rand = generateRandomVec3(time, index);
-    arr[index].x = scale * rand.x;
-    arr[index].y = scale * rand.y;
-    arr[index].z = scale * rand.z;
-  }
-}
-
-__global__ void kernSetBaseRGB(int time, int N, glm::vec3 * arr, glm::vec3 baseRGB) {
-  int index = (blockIdx.x * blockDim.x) + threadIdx.x;
-  if (index < N) {
-    glm::vec3 rand = generateRandomVec3(time, index);
-    arr[index].x = baseRGB.r;
-    arr[index].y = baseRGB.g;
-    arr[index].z = baseRGB.b;
-  }
-}
-
-/**
 * Initialize memory, update some globals
 */
 void ScanMatch::initSimulation(int N) {
   numObjects = N;
 
-  //Setup and initialize source pointcloud
+  //Setup and initialize source and target pointcloud
   src_pc = new pointcloud(false, numObjects);
   src_pc->initCPU();
-}
 
+  target_pc = new pointcloud(true, numObjects);
+  target_pc->initCPU();
+}
 
 /******************
 * copyPointCloudToVBO *
@@ -112,6 +95,7 @@ void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb
 
   //IF CPU
   src_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
+  //target_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_positions, scene_scale);
 }
 
 

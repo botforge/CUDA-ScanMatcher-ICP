@@ -9,6 +9,7 @@
 #define COHERENT_GRID 0
 
 const int N_FOR_VIS = 5000;
+const int TRUE_N = N_FOR_VIS / 2;
 const float DT = 0.2f;
 
 /**
@@ -99,7 +100,7 @@ bool init(int argc, char **argv) {
   cudaGLRegisterBufferObject(boidVBO_velocities);
 
   // Initialize N-body simulation
-  ScanMatch::initSimulation(N_FOR_VIS);
+  ScanMatch::initSimulation(TRUE_N);
 
   updateCamera();
 
@@ -186,11 +187,11 @@ void initShaders(GLuint * program) {
     cudaGLMapBufferObject((void**)&dptrVertVelocities, boidVBO_velocities);
 
     // execute the kernel call Step Here
-
     #if VISUALIZE
     ScanMatch::copyPointCloudToVBO(dptrVertPositions, dptrVertVelocities);
     #endif
     // unmap buffer object
+
     cudaGLUnmapBufferObject(boidVBO_positions);
     cudaGLUnmapBufferObject(boidVBO_velocities);
   }

@@ -109,17 +109,9 @@ void ScanMatch::initSimulation(int N) {
 * Wrapper for call to the kernCopyboidsToVBO CUDA kernel.
 */
 void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb) {
-  dim3 fullBlocksPerGrid((numObjects + blockSize - 1) / blockSize);
 
   //IF CPU
   src_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
-
-  /*
-  kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, src_pc->dev_pos, vbodptr_positions, scene_scale);
-  kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(numObjects, src_pc->dev_rgb, vbodptr_rgb, scene_scale);
-  checkCUDAErrorWithLine("copyScanMatchToVBO failed!");
-  cudaDeviceSynchronize();
-  */
 }
 
 
@@ -182,8 +174,7 @@ __global__ void kernComputeIndices(int N, int gridResolution,
 }
 
 void ScanMatch::endSimulation() {
-  cudaFree(dev_rgb);
-  cudaFree(dev_pos);
+	src_pc->~pointcloud();
 }
 
 void ScanMatch::unitTest() {

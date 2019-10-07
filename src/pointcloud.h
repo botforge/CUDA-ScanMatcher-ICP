@@ -1,6 +1,6 @@
 /**
  * @file	  pointcloud.h
- * @brief     Creates a pointcloud (from a file or otherwise) and methods to render it
+ * @brief     Create, Render and Destroy a pointcloud
  * @authors   Dhruv Karthik
  * @date      2019
  */

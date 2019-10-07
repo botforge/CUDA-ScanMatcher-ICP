@@ -20,6 +20,7 @@ __global__ void kernCopyPositionsToVBO(int N, glm::vec3 *pos, float *vbo, float 
     vbo[4 * index + 3] = 1.0f;
   }
 }
+
 /**
 * Copy the Pointcloud RGB's into the VBO so that they can be drawn by OpenGL.
 */

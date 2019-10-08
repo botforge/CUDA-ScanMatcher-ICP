@@ -21,4 +21,5 @@ namespace ScanMatch {
 	//CPU SCANMATCHING
 	void ICPCPU();
 	void findNNCPU(pointcloud* src, pointcloud* target, float* dist, int* indicies, int N);
+	void reshuffleCPU(pointcloud* a, int* indicies, int N);
 } 

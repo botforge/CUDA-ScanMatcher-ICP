@@ -178,8 +178,8 @@ void ScanMatch::ICPCPU() {
 		//1: Find Nearest Neigbors and Reshuffle
 		float* dist = new float[numObjects];
 		int* indicies = new int[numObjects];
-		//ScanMatch::findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
-		//reshuffleCPU(target_pc, indicies, numObjects);
+		ScanMatch::findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
+		ScanMatch::reshuffleCPU(target_pc, indicies, numObjects);
 	}
 }
 /**
@@ -211,3 +211,14 @@ void ScanMatch::findNNCPU(pointcloud* src, pointcloud* target, float* dist, int 
 	}
 }
 
+/**
+ * Reshuffles pointcloud a as per indicies, puts these in dev_matches
+ * NOT ONE TO ONE SO NEED TO MAKE A COPY!
+*/
+void ScanMatch::reshuffleCPU(pointcloud* a, int* indicies, int N) {
+	glm::vec3 *a_dev_matches = a->dev_matches;
+	glm::vec3 *a_dev_pos = a->dev_pos;
+	for (int i = 0; i < N; ++i) {
+		a_dev_matches[i] = a_dev_pos[indicies[i]];
+	}
+}

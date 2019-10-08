@@ -20,4 +20,5 @@ namespace ScanMatch {
 
 	//CPU SCANMATCHING
 	void ICPCPU();
+	void findNNCPU(float* src_pc, float* target_pc, float* dist, int* indicies, int numObjects);
 } 

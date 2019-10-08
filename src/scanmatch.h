@@ -17,4 +17,7 @@ namespace ScanMatch {
     void copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb);
     void endSimulation();
     void unitTest();
-}
+
+	//CPU SCANMATCHING
+	void ICPCPU();
+} 

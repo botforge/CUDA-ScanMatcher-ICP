@@ -6,6 +6,9 @@
 #include "utilityCore.hpp"
 #include "scanmatch.h"
 
+#define MAX_ICP_ITERS 1000
+#define EPSILON 0.001
+
 // LOOK-2.1 potentially useful for doing grid-based neighbor search
 #ifndef imax
 #define imax( a, b ) ( ((a) > (b)) ? (a) : (b) )
@@ -162,66 +165,21 @@ void ScanMatch::endSimulation() {
 	target_pc->~pointcloud();
 }
 
-void ScanMatch::unitTest() {
-  // LOOK-1.2 Feel free to write additional tests here.
+/******************
+* CPU SCANMATCHING *
+******************/
 
-  // test unstable sort
-  int *dev_intKeys;
-  int *dev_intValues;
-  int N = 10;
-
-  std::unique_ptr<int[]>intKeys{ new int[N] };
-  std::unique_ptr<int[]>intValues{ new int[N] };
-
-  intKeys[0] = 0; intValues[0] = 0;
-  intKeys[1] = 1; intValues[1] = 1;
-  intKeys[2] = 0; intValues[2] = 2;
-  intKeys[3] = 3; intValues[3] = 3;
-  intKeys[4] = 0; intValues[4] = 4;
-  intKeys[5] = 2; intValues[5] = 5;
-  intKeys[6] = 2; intValues[6] = 6;
-  intKeys[7] = 0; intValues[7] = 7;
-  intKeys[8] = 5; intValues[8] = 8;
-  intKeys[9] = 6; intValues[9] = 9;
-
-  cudaMalloc((void**)&dev_intKeys, N * sizeof(int));
-  checkCUDAErrorWithLine("cudaMalloc dev_intKeys failed!");
-
-  cudaMalloc((void**)&dev_intValues, N * sizeof(int));
-  checkCUDAErrorWithLine("cudaMalloc dev_intValues failed!");
-
-  dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
-
-  std::cout << "before unstable sort: " << std::endl;
-  for (int i = 0; i < N; i++) {
-    std::cout << "  key: " << intKeys[i];
-    std::cout << " value: " << intValues[i] << std::endl;
-  }
-
-  // How to copy data to the GPU
-  cudaMemcpy(dev_intKeys, intKeys.get(), sizeof(int) * N, cudaMemcpyHostToDevice);
-  cudaMemcpy(dev_intValues, intValues.get(), sizeof(int) * N, cudaMemcpyHostToDevice);
-
-  // Wrap device vectors in thrust iterators for use with thrust.
-  thrust::device_ptr<int> dev_thrust_keys(dev_intKeys);
-  thrust::device_ptr<int> dev_thrust_values(dev_intValues);
-  // LOOK-2.1 Example for using thrust::sort_by_key
-  thrust::sort_by_key(dev_thrust_keys, dev_thrust_keys + N, dev_thrust_values);
-
-  // How to copy data back to the CPU side from the GPU
-  cudaMemcpy(intKeys.get(), dev_intKeys, sizeof(int) * N, cudaMemcpyDeviceToHost);
-  cudaMemcpy(intValues.get(), dev_intValues, sizeof(int) * N, cudaMemcpyDeviceToHost);
-  checkCUDAErrorWithLine("memcpy back failed!");
-
-  std::cout << "after unstable sort: " << std::endl;
-  for (int i = 0; i < N; i++) {
-    std::cout << "  key: " << intKeys[i];
-    std::cout << " value: " << intValues[i] << std::endl;
-  }
-
-  // cleanup
-  cudaFree(dev_intKeys);
-  cudaFree(dev_intValues);
-  checkCUDAErrorWithLine("cudaFree failed!");
-  return;
+/**
+ * Main Algorithm for Running ICP on the CPU
+ * Finds homogenous transform between src_pc and target_pc 
+*/
+void ScanMatch::ICPCPU() {
+	for (int i = 0; i < MAX_ICP_ITERS; ++i) {
+		//1: Find Nearest Neigbors and Reshuffle
+		float* dist = new float[numObjects];
+		int* indicies = new int[numObjects];
+		//findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
+		//reshuffleCPU(target_pc, indicies, numObjects);
+	}
 }
+

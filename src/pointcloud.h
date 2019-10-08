@@ -17,6 +17,7 @@ class pointcloud {
 public:
 
 	glm::vec3 *dev_pos;
+	glm::vec3 *dev_matches;
 	glm::vec3 *dev_rgb;
 	bool isTarget; 
 	int N; //Number of points

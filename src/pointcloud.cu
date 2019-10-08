@@ -39,11 +39,13 @@ __global__ void kernCopyRGBToVBO(int N, glm::vec3 *rgb, float *vbo, float s_scal
 
 pointcloud::pointcloud(): isTarget(false), N(500){
 	dev_pos = new glm::vec3[500];
+	dev_matches = new glm::vec3[500];
 	dev_rgb = new glm::vec3[500];
 }
 
 pointcloud::pointcloud(bool target, int numPoints): isTarget(target), N(numPoints){
 	dev_pos = new glm::vec3[N];
+	dev_matches = new glm::vec3[N];
 	dev_rgb = new glm::vec3[N];
 }
 

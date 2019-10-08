@@ -178,7 +178,7 @@ void ScanMatch::ICPCPU() {
 		//1: Find Nearest Neigbors and Reshuffle
 		float* dist = new float[numObjects];
 		int* indicies = new int[numObjects];
-		//findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
+		//ScanMatch::findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
 		//reshuffleCPU(target_pc, indicies, numObjects);
 	}
 }

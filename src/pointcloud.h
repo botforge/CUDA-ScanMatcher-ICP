@@ -11,7 +11,6 @@
 #include <cmath>
 #include <cuda.h>
 #include "utilityCore.hpp"
-#include "scanmatch.h"
 
 class pointcloud {
 public:
@@ -29,11 +28,6 @@ public:
 	void initCPU();
 	void buildSinusoidCPU();
     void pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
-
-	//GPU METHODS
-	void initGPU();
-	void buildSinusoidGPU();
-    void pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
 
 	~pointcloud();
 };

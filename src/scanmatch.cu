@@ -182,4 +182,32 @@ void ScanMatch::ICPCPU() {
 		//reshuffleCPU(target_pc, indicies, numObjects);
 	}
 }
+/**
+ * Finds Nearest Neighbors of target pc in src pc
+ * @args: src, target -> PointClouds w/ filled dev_pos
+ * @returns: 
+	* dist -> N array -> ith index = dist(src[i], closest_point in target)
+	* indicies -> N array w/ ith index = index of the closest point in target to src[i]
+*/
+void ScanMatch::findNNCPU(pointcloud* src, pointcloud* target, float* dist, int *indicies, int N) {
+	glm::vec3* src_dev_pos = src->dev_pos;
+	glm::vec3* target_dev_pos = target->dev_pos;
+	
+	for (int src_idx = 0; src_idx < N; ++src_idx) { //Iterate through each source point
+		glm::vec3 src_pt = src_dev_pos[src_idx];
+		float minDist = INFINITY;
+		int idx_minDist = -1;
+		for (int tgt_idx = 0; tgt_idx < N; ++tgt_idx) { //Iterate through each tgt point and find closest
+			glm::vec3 tgt_pt = target_dev_pos[tgt_idx];
+			float d = glm::distance(src_pt, tgt_pt);
+			if (d < minDist) {
+				minDist = d;
+				idx_minDist = tgt_idx;
+			}
+		}
+		//Update dist and indicies
+		dist[src_idx] = minDist;
+		indicies[src_idx] = idx_minDist;
+	}
+}
 

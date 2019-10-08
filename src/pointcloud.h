@@ -18,6 +18,9 @@ public:
 	glm::vec3 *dev_pos;
 	glm::vec3 *dev_matches;
 	glm::vec3 *dev_rgb;
+
+	glm::vec3 *dev_tempcpupos;
+	glm::vec3 *dev_tempcpurgb;
 	bool isTarget; 
 	int N; //Number of points
 	

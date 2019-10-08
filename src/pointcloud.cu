@@ -130,11 +130,11 @@ void pointcloud::pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb
 	cudaDeviceSynchronize();
 
 	//Now Flipping original pointer to device so we don't crash on termination
-	dev_pos = tempPos;
-	dev_rgb = tempRGB;
+	dev_tempcpupos = tempPos;
+	dev_tempcpurgb = tempRGB;
 }
 
 pointcloud::~pointcloud() {
-	cudaFree(dev_pos);
-	cudaFree(dev_rgb);
+	cudaFree(dev_tempcpupos);
+	cudaFree(dev_tempcpurgb);
 }

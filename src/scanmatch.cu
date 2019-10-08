@@ -173,14 +173,12 @@ void ScanMatch::endSimulation() {
  * Main Algorithm for Running ICP on the CPU
  * Finds homogenous transform between src_pc and target_pc 
 */
-void ScanMatch::ICPCPU() {
-	for (int i = 0; i < MAX_ICP_ITERS; ++i) {
-		//1: Find Nearest Neigbors and Reshuffle
-		float* dist = new float[numObjects];
-		int* indicies = new int[numObjects];
-		ScanMatch::findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
-		ScanMatch::reshuffleCPU(target_pc, indicies, numObjects);
-	}
+void ScanMatch::stepICPCPU() {
+	//1: Find Nearest Neigbors and Reshuffle
+	float* dist = new float[numObjects];
+	int* indicies = new int[numObjects];
+	ScanMatch::findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
+	ScanMatch::reshuffleCPU(target_pc, indicies, numObjects);
 }
 /**
  * Finds Nearest Neighbors of target pc in src pc
@@ -192,7 +190,6 @@ void ScanMatch::ICPCPU() {
 void ScanMatch::findNNCPU(pointcloud* src, pointcloud* target, float* dist, int *indicies, int N) {
 	glm::vec3* src_dev_pos = src->dev_pos;
 	glm::vec3* target_dev_pos = target->dev_pos;
-	
 	for (int src_idx = 0; src_idx < N; ++src_idx) { //Iterate through each source point
 		glm::vec3 src_pt = src_dev_pos[src_idx];
 		float minDist = INFINITY;

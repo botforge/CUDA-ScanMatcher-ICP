@@ -187,6 +187,8 @@ void initShaders(GLuint * program) {
     cudaGLMapBufferObject((void**)&dptrVertVelocities, boidVBO_velocities);
 
     // execute the kernel call Step Here
+	ScanMatch::stepICPCPU();
+
     #if VISUALIZE
     ScanMatch::copyPointCloudToVBO(dptrVertPositions, dptrVertVelocities);
     #endif

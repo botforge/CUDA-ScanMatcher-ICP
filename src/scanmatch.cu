@@ -6,7 +6,7 @@
 #include "utilityCore.hpp"
 #include "scanmatch.h"
 
-#define MAX_ICP_ITERS 1000
+#define MAX_ICP_ITERS 5
 #define EPSILON 0.001
 
 // LOOK-2.1 potentially useful for doing grid-based neighbor search
@@ -220,5 +220,28 @@ void ScanMatch::reshuffleCPU(pointcloud* a, int* indicies, int N) {
 	glm::vec3 *a_dev_pos = a->dev_pos;
 	for (int i = 0; i < N; ++i) {
 		a_dev_matches[i] = a_dev_pos[indicies[i]];
+	}
+}
+
+/**
+ * Calculates transform T that maps from src to target
+ * Assumes dev_matches is filled for target
+*/
+void bestFitTransform(pointcloud* src, pointcloud* target, glm::mat4 *T, int N){
+	glm::vec3* src_norm = new glm::vec3[N];
+	glm::vec3* target_norm = new glm::vec3[N];
+	glm::vec3 src_sum(0.f);
+	glm::vec3 target_sum(0.f);
+	glm::vec3* src_pos = src->dev_pos;
+	glm::vec3* target_matches = src->dev_matches;
+
+	//1:Calculate centroids and norm src and target
+	for (int i = 0; i < N; ++i) {
+		src_sum += src_pos[i];
+		target_sum += target_matches[i];
+	}
+	for (int j = 0; j < N; ++j) {
+		src_norm[j] = src_pos[j]  - src_sum/glm::vec3(N);
+		target_norm[j] = target_matches[j] - target_sum/glm::vec3(N);
 	}
 }

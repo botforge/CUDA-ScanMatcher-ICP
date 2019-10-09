@@ -18,14 +18,14 @@ namespace ScanMatch {
     void unitTest();
 
 	//CPU SCANMATCHING
-    void initSimulationCPU(int N);
+    void initSimulationCPU(int N, std::vector<glm::vec3> coords);
 	void stepICPCPU();
 	void findNNCPU(pointcloud* src, pointcloud* target, float* dist, int* indicies, int N);
 	void reshuffleCPU(pointcloud* a, int* indicies, int N);
 	void bestFitTransform(pointcloud* src, pointcloud* target, int N, glm::mat3 &R, glm::vec3 &t);
 
 	//GPU_NAIVE SCANMATCHING
-    void initSimulationGPU(int N);
+    void initSimulationGPU(int N, std::vector<glm::vec3> coords);
 	void stepICPGPU_NAIVE();
 	void findNNGPU_NAIVE(pointcloud* src, pointcloud* target, float* dist, int* indicies, int N);
 	void reshuffleGPU(pointcloud* a, int* indicies, int N);

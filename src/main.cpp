@@ -5,10 +5,11 @@
 // ================
 
 #define VISUALIZE 1
+#define STEP false
 #define CPU false
 #define GPU_NAIVE true
 #define GPU_OCTREE false
-#define WAYMO true
+#define WAYMO true;
 #define UNIFORM_GRID 0
 #define COHERENT_GRID 0
 
@@ -23,11 +24,12 @@
 */
 int main(int argc, char* argv[]) {
   projectName = "CUDA Scan Matching";
-
-  if (init(argc, argv)) {
 #if WAYMO
+	  N_FOR_VIS = 10104 * 2;
+	  TRUE_N = N_FOR_VIS / 2;
 	  parseWaymo();
 #endif
+  if (init(argc, argv)) {
     mainLoop();
     ScanMatch::endSimulation();
     return 0;
@@ -37,7 +39,19 @@ int main(int argc, char* argv[]) {
 }
 
 void parseWaymo() {
-
+	std::ifstream waymoFile("../waymo.txt");
+	std::string line;
+	printf("OPENING WAYMO.TXT \n");
+	float x, y, z;
+	while (std::getline(waymoFile, line)) {
+		//std::cout << line << std::endl;
+		std::stringstream ss(line);
+		ss >> x;
+		ss >> y;
+		ss >> z;
+		glm::vec3 point(x, y, z);
+		coords.push_back(point);
+	}
 }
 
 //-------------------------------
@@ -114,9 +128,9 @@ bool init(int argc, char **argv) {
 
   // Initialize N-body simulation
 #if CPU
-  ScanMatch::initSimulationCPU(TRUE_N);
+	ScanMatch::initSimulationCPU(TRUE_N, coords);
 #elif GPU_NAIVE
-  ScanMatch::initSimulationGPU(TRUE_N);
+	ScanMatch::initSimulationGPU(TRUE_N, coords);
 #endif
   updateCamera();
 
@@ -203,11 +217,13 @@ void initShaders(GLuint * program) {
     cudaGLMapBufferObject((void**)&dptrVertVelocities, boidVBO_velocities);
 
     // execute the kernel call Step Here
-#if CPU
-	ScanMatch::stepICPCPU();
-#elif GPU_NAIVE
-	ScanMatch::stepICPGPU_NAIVE();
-#endif
+	if (STEP) {
+	#if CPU
+		ScanMatch::stepICPCPU();
+	#elif GPU_NAIVE
+		ScanMatch::stepICPGPU_NAIVE();
+	#endif
+	}
     #if VISUALIZE
     ScanMatch::copyPointCloudToVBO(dptrVertPositions, dptrVertVelocities, CPU);
     #endif

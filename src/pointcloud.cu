@@ -17,9 +17,18 @@ __host__ __device__ unsigned int hash(unsigned int a) {
 
 __host__ __device__ glm::vec3 generateRandomVec3(int index) {
   thrust::default_random_engine rng(hash((int)(index)));
-  thrust::uniform_real_distribution<float> unitDistrib(0, 0.1);
+  thrust::uniform_real_distribution<float> unitDistrib(0.f, 0.1f);
 
   return glm::vec3((float)unitDistrib(rng), (float)unitDistrib(rng), (float)unitDistrib(rng));
+}
+
+__global__ void kernSetRGB(glm::vec3* rgb, glm::vec3 color, int N) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+	rgb[idx].x = color.r;
+	rgb[idx].y = color.g;
+	rgb[idx].z = color.b;
+  }
 }
 
 /**
@@ -30,7 +39,7 @@ __global__ void kernBuildTargetSinusoid(glm::vec3* pos, glm::vec3* rgb, glm::mat
   if (idx < N) {
     glm::vec3 t = generateRandomVec3(idx);
 	//glm::vec3 t(0.0f, 0.0f, 0.0f);
-    pos[idx].x = 0.7;
+    pos[idx].x = 0.7f;
     pos[idx].y = idx * y_interval;
     pos[idx].z = sinf(idx*y_interval);
 	pos[idx] = pos[idx] + t;
@@ -48,7 +57,7 @@ __global__ void kernBuildSrcSinusoid(glm::vec3* pos, glm::vec3* rgb, glm::mat4 r
   if (idx < N) {
     glm::vec3 t = generateRandomVec3(idx);
 	//glm::vec3 t(0.1f, 0.0f, 0.0f);
-    pos[idx].x = 0.7;
+    pos[idx].x = 0.7f;
     pos[idx].y = idx * y_interval;
     pos[idx].z = sinf(idx*y_interval);
 	glm::vec3 rotated = glm::vec3(rotationMat * glm::vec4(pos[idx], 1.0f));
@@ -219,6 +228,34 @@ void pointcloud::initGPU() {
 	buildSinusoidGPU();
 }
 
+void pointcloud::initGPU(std::vector<glm::vec3> coords) {
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	
+	//cudaMalloc position, matches & rgb arrays
+	cudaMalloc((void**)&dev_pos, N * sizeof(glm::vec3));
+	utilityCore::checkCUDAErrorWithLine("cudaMalloc dev_pos failed");
+
+	cudaMalloc((void**)&dev_matches, N * sizeof(glm::vec3));
+	utilityCore::checkCUDAErrorWithLine("cudaMalloc dev_matches failed");
+
+	cudaMalloc((void**)&dev_rgb, N * sizeof(glm::vec3));
+	utilityCore::checkCUDAErrorWithLine("cudaMalloc dev_rgb failed");
+	printf("SIZE IS: %d \n", coords.size());
+	if (coords.size() > 0) {
+		buildWaymoGPU(coords);
+	}
+	else {
+		buildSinusoidGPU();
+	}
+}
+
+void pointcloud::buildWaymoGPU(std::vector<glm::vec3> coords) {
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	glm::vec3* waymoPos = &coords[0];
+	cudaMemcpy(dev_pos, waymoPos, N * sizeof(glm::vec3), cudaMemcpyHostToDevice);
+	kernSetRGB<<<fullBlocksPerGrid, blockSize>>>(dev_rgb, glm::vec3(1.0f, 1.0f, 1.0f), N);
+}
+
 /**
  * Populates dev_pos with a 3D Sinusoid (with or without Noise) on the GPU
  * Fills dev_pos & dev_rgb
@@ -227,7 +264,7 @@ void pointcloud::buildSinusoidGPU() {
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 	float y_interval = (2.5 * PI) / N;
 
-	glm::vec3 r(0.f, 1.0f, 0.0f);
+	glm::vec3 r(0.f, 1.0f, 1.0f);
 	float angle = -0.7f * PI;
 	//float angle = 0.0f;
 	glm::mat4 rotationMat = glm::rotate(angle, r);
@@ -245,8 +282,8 @@ void pointcloud::pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb
 
 	//Launching Kernels
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
-	kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(N, dev_pos, vbodptr_positions, s_scale, vbo_offset);
-	kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(N, dev_rgb, vbodptr_rgb, s_scale, vbo_offset);
+	kernCopyPositionsToVBO<<<fullBlocksPerGrid, blockSize >>>(N, dev_pos, vbodptr_positions, s_scale, vbo_offset);
+	kernCopyRGBToVBO <<<fullBlocksPerGrid, blockSize >>>(N, dev_rgb, vbodptr_rgb, s_scale, vbo_offset);
 	utilityCore::checkCUDAErrorWithLine("copyPointCloudToVBO failed!");
 	cudaDeviceSynchronize();
 }

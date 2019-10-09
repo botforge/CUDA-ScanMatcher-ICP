@@ -33,7 +33,7 @@
  * FOR WAYMO DATASET: 
 */
 
-#define scene_scale 2.f
+#define scene_scale 1<<5
 
 /***********************************************
 * Kernel state (pointers are device pointers) *
@@ -54,7 +54,7 @@ pointcloud* src_pc;
 /**
 * Initialize memory, update some globals
 */
-void ScanMatch::initSimulationCPU(int N) {
+void ScanMatch::initSimulationCPU(int N, std::vector<glm::vec3> coords) {
   numObjects = N;
 
   //Setup and initialize source and target pointcloud
@@ -64,14 +64,14 @@ void ScanMatch::initSimulationCPU(int N) {
   target_pc->initCPU();
 }
 
-void ScanMatch::initSimulationGPU(int N) {
+void ScanMatch::initSimulationGPU(int N , std::vector<glm::vec3> coords) {
   numObjects = N;
 
   //Setup and initialize source and target pointcloud
   src_pc = new pointcloud(false, numObjects, true);
-  src_pc->initGPU();
+  src_pc->initGPU(coords);
   target_pc = new pointcloud(true, numObjects, true);
-  target_pc->initGPU();
+  target_pc->initGPU(coords);
 }
 
 /******************
@@ -370,6 +370,7 @@ void ScanMatch::findNNGPU_NAIVE(pointcloud* src, pointcloud* target, float* dist
 __global__ void kernReshuffleGPU(glm::vec3* pos, glm::vec3* matches, int *indicies, int N) {
   int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
   if (idx < N) {
+	  //matches[idx] = pos[idx];
 	  matches[idx] = pos[indicies[idx]];
   }
 }
@@ -476,9 +477,6 @@ void ScanMatch::bestFitTransformGPU(pointcloud* src, pointcloud* target, int N, 
 
 	//5:Rotation Matrix and Translation Vector
 	R = (matU * matV);
-	if (glm::determinant(R) < 0) {
-		printf("NEGATIVE DET\n");
-	}
 	t = target_centroid - R * (src_centroid);
 
 	//cudaMalloc Norms and Harray

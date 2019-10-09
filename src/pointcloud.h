@@ -35,12 +35,16 @@ public:
 
 	//CPU METHODS
 	void initCPU();
+	void initCPU(std::vector<glm::vec3> coords);
 	void buildSinusoidCPU();
+	void buildWaymoCPU(std::vector<glm::vec3> coords);
     void pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
 
 	//GPU METHODS
 	void initGPU();
+	void initGPU(std::vector<glm::vec3> coords);
 	void buildSinusoidGPU();
+	void buildWaymoGPU(std::vector<glm::vec3> coords);
     void pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
 
 	~pointcloud();

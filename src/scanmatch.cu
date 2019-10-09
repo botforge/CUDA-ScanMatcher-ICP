@@ -49,6 +49,9 @@ glm::vec3 *dev_rgb;
 pointcloud* target_pc;
 pointcloud* src_pc;
 
+//OCTREE pointer (all octnodes lie in device memory)
+Octree* octree;
+
 /******************
 * initSimulation *
 ******************/
@@ -67,6 +70,18 @@ void ScanMatch::initSimulationCPU(int N, std::vector<glm::vec3> coords) {
 
 void ScanMatch::initSimulationGPU(int N , std::vector<glm::vec3> coords) {
   numObjects = N;
+
+  //Setup and initialize source and target pointcloud
+  src_pc = new pointcloud(false, numObjects, true);
+  src_pc->initGPU(coords);
+  target_pc = new pointcloud(true, numObjects, true);
+  target_pc->initGPU(coords);
+}
+
+void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
+  numObjects = N;
+  //First create the octree (put all OctNodes in device Memory)
+
 
   //Setup and initialize source and target pointcloud
   src_pc = new pointcloud(false, numObjects, true);

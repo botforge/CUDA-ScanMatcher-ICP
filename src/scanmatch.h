@@ -10,6 +10,7 @@
 #include <vector>
 #include "pointcloud.h"
 #include "utilityCore.hpp"
+#include "octree.h"
 
 
 namespace ScanMatch {
@@ -30,4 +31,7 @@ namespace ScanMatch {
 	void findNNGPU_NAIVE(pointcloud* src, pointcloud* target, float* dist, int* indicies, int N);
 	void reshuffleGPU(pointcloud* a, int* indicies, int N);
 	void bestFitTransformGPU(pointcloud* src, pointcloud* target, int N, glm::mat3 &R, glm::vec3 &t);
+
+	//GPU OCTREE SCANMATCHING
+    void initSimulationGPUOCTREE(int N, std::vector<glm::vec3> coords);
 } 

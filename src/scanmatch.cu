@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include "utilityCore.hpp"
 #include "scanmatch.h"
+#include "svd3.h"
 
 // LOOK-2.1 potentially useful for doing grid-based neighbor search
 #ifndef imax
@@ -180,13 +181,13 @@ void ScanMatch::stepICPCPU() {
 	//2: Find Best Fit Transformation
 	glm::mat3 R;
 	glm::vec3 t;
-	//ScanMatch::bestFitTransform(src_pc, target_pc, numObjects, R, t);
+	ScanMatch::bestFitTransform(src_pc, target_pc, numObjects, R, t);
 
 	//3: Update each src_point
-	//glm::vec3* src_dev_pos = src_pc->dev_pos;
-	//for (int i = 0; i < numObjects; ++i) {
-		//src_dev_pos[i] = R * src_dev_pos[i] + t;
-	//}
+	glm::vec3* src_dev_pos = src_pc->dev_pos;
+	for (int i = 0; i < numObjects; ++i) {
+		src_dev_pos[i] = src_dev_pos[i] + t;
+	}
 }
 
 /**
@@ -276,6 +277,6 @@ void ScanMatch::bestFitTransform(pointcloud* src, pointcloud* target, int N, glm
 	glm::mat3 matV(glm::vec3(V[0][0], V[0][1], V[0][2]), glm::vec3(V[1][0], V[1][1], V[1][2]), glm::vec3(V[2][0], V[2][1], V[2][2]));
 
 	//2:Rotation Matrix and Translation Vector
-	R = matU * matV;
+	R = glm::transpose(matU * matV);
 	t = target_centroid - R * (src_centroid);
 }

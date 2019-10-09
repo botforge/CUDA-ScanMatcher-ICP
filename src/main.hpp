@@ -33,11 +33,11 @@ GLuint program[2];
 const unsigned int PROG_BOID = 0;
 
 const float fovy = (float) (PI / 4);
-const float zNear = 0.10f;
+const float zNear = 0.01f;
 const float zFar = 10.0f;
 // LOOK-1.2: for high DPI displays, you may want to double these settings.
-int width = 1280;
-int height = 720;
+int width = 1280 * 4;
+int height = 720 * 4;
 int pointSize = 1;
 
 // For camera controls
@@ -45,9 +45,9 @@ bool leftMousePressed = false;
 bool rightMousePressed = false;
 double lastX;
 double lastY;
-float theta = 1.22f;
-float phi = -0.70f;
-float zoom = 4.0f;
+float theta = 2.22f;
+float phi = -1.5f;
+float zoom = 5.0f;
 glm::vec3 lookAt = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraPosition;
 

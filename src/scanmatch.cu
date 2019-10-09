@@ -30,10 +30,11 @@
 /*! Size of the starting area in simulation space. 
  * FOR SINE TEST: 2.f
  * FOR ELEPHANT OBJ: 
- * FOR WAYMO DATASET: 
+ * FOR BUDDHA OBJ: 1 << 2;
+ * FOR WAYMO DATASET: 1 << 5;
 */
 
-#define scene_scale 1<<5
+#define scene_scale 1 << 2
 
 /***********************************************
 * Kernel state (pointers are device pointers) *
@@ -305,8 +306,8 @@ void ScanMatch::stepICPGPU_NAIVE() {
 
 	cudaMalloc((void**)&indicies, numObjects * sizeof(int));
 	utilityCore::checkCUDAError("cudaMalloc indicies failed", __LINE__);
-	//cudaMemset(dist, 0, numObjects * sizeof(float));
-	//cudaMemset(indicies, -1, numObjects * sizeof(int));
+	cudaMemset(dist, 0, numObjects * sizeof(float));
+	cudaMemset(indicies, -1, numObjects * sizeof(int));
 
 	//1: Find Nearest Neigbors and Reshuffle
 	ScanMatch::findNNGPU_NAIVE(src_pc, target_pc, dist, indicies, numObjects);
@@ -397,7 +398,7 @@ __global__ void kernComputeHarray(glm::mat3* Harray, glm::vec3* src_norm, glm::v
   if (idx < N) {
 	  Harray[idx] = glm::mat3(glm::vec3(src_norm[idx]) * target_norm[idx].x,
 		  glm::vec3(src_norm[idx]) * target_norm[idx].y,
-		  glm::vec3(src_norm[idx] * target_norm[idx].z));
+		  glm::vec3(src_norm[idx]) * target_norm[idx].z);
  }
 }
 
@@ -455,6 +456,7 @@ void ScanMatch::bestFitTransformGPU(pointcloud* src, pointcloud* target, int N, 
 	glm::mat3 H = thrust::reduce(harray_thrust, harray_thrust + N, glm::mat3(0.f), thrust::plus<glm::mat3>());
 	cudaThreadSynchronize();
 	*/
+
 	glm::mat3* Hcpu = new glm::mat3[N];
 	cudaMemcpy(Hcpu, Harray, N * sizeof(glm::mat3), cudaMemcpyDeviceToHost);
 	utilityCore::checkCUDAError("REDUCE HARRAY Failed", __LINE__);
@@ -477,7 +479,7 @@ void ScanMatch::bestFitTransformGPU(pointcloud* src, pointcloud* target, int N, 
 
 	//5:Rotation Matrix and Translation Vector
 	R = (matU * matV);
-	t = target_centroid - R * (src_centroid);
+	t = target_centroid - (R) * (src_centroid);
 
 	//cudaMalloc Norms and Harray
 	cudaFree(src_norm);

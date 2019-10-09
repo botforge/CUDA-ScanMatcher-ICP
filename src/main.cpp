@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
 void parseModel() {
 	int counter = 0;
-	std::ifstream waymoFile("../bigwaymo.txt");
+	std::ifstream waymoFile("../bunny.ply");
 	std::string line;
 	printf("OPENING MODEL \n");
 	float x, y, z;
@@ -49,6 +49,7 @@ void parseModel() {
 		ss >> y;
 		ss >> z;
 		glm::vec3 point(x, y, z);
+		point *= 20.f;
 		coords.push_back(point);
 		++counter;
 	}
@@ -239,7 +240,7 @@ void initShaders(GLuint * program) {
     double fps = 0;
     double timebase = 0;
     int frame = 0;
-
+	int counter = 0;
     //ScanMatch::unitTest(); 
 
     while (!glfwWindowShouldClose(window)) {
@@ -254,7 +255,9 @@ void initShaders(GLuint * program) {
         frame = 0;
       }
 
-      runCUDA();
+	  if (counter < 1  && frame < 2|| counter > 1500) {
+		runCUDA();
+	  }
 
       std::ostringstream ss;
       ss << "[";
@@ -277,6 +280,7 @@ void initShaders(GLuint * program) {
 
       glfwSwapBuffers(window);
       #endif
+	  counter++;
     }
     glfwDestroyWindow(window);
     glfwTerminate();

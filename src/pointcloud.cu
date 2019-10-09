@@ -24,6 +24,14 @@ __host__ __device__ glm::vec3 generateRandomVec3(int index) {
   return glm::vec3((float)unitDistrib(rng), (float)unitDistrib(rng), (float)unitDistrib(rng));
 }
 
+__global__ void kernRotTrans(glm::vec3* pos, glm::mat4 rotationMat, glm::vec3 t, int N) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+	glm::vec3 rotated = glm::vec3(rotationMat * glm::vec4(pos[idx], 1.0f));
+	pos[idx] = rotated + t;
+  }
+}
+
 __global__ void kernSetRGB(glm::vec3* rgb, glm::vec3 color, int N) {
   int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
   if (idx < N) {
@@ -80,8 +88,8 @@ __global__ void kernCopyPositionsToVBO(int N, glm::vec3 *pos, float *vbo, float 
 
   if (index < N) {
 	index += vbo_offset;
-	vbo[4 * index + 0] = pos[index].x * c_scale;
-    vbo[4 * index + 1] = pos[index].y * c_scale;
+	vbo[4 * index + 0] = pos[index].x * c_scale - 0.f;
+    vbo[4 * index + 1] = (pos[index].y+0.5f) * c_scale;
     vbo[4 * index + 2] = pos[index].z * c_scale;
     vbo[4 * index + 3] = 1.0f;
   }
@@ -260,6 +268,12 @@ void pointcloud::buildCoordsGPU(std::vector<glm::vec3> coords) {
 	}
 	else {
 		kernSetRGB<<<fullBlocksPerGrid, blockSize>>>(dev_rgb, ORANGE, N);
+		float angle = 0.7 * PI;
+		glm::vec3 axis(1.f, 0.f, 0.f);
+		//glm::vec3 t(1.0, 0.f, 0.f);
+		glm::vec3 t(1.0, -3.f, -200.f);
+		glm::mat4 rotationMatrix = glm::rotate(angle, axis);
+		kernRotTrans << <fullBlocksPerGrid, blockSize >> > (dev_pos, rotationMatrix, t, N);
 	}
 }
 
@@ -270,7 +284,6 @@ void pointcloud::buildCoordsGPU(std::vector<glm::vec3> coords) {
 void pointcloud::buildSinusoidGPU() {
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 	float y_interval = (2.5 * PI) / N;
-
 	glm::vec3 r(0.f, 1.0f, 1.0f);
 	float angle = -0.7f * PI;
 	//float angle = 0.0f;

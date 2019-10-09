@@ -76,13 +76,13 @@ __host__ __device__ glm::vec3 generateRandomVec3(float time, int index) {
 /**
 * Initialize memory, update some globals
 */
-void ScanMatch::initSimulation(int N) {
+void ScanMatch::initSimulationCPU(int N) {
   numObjects = N;
 
   //Setup and initialize source and target pointcloud
   src_pc = new pointcloud(false, numObjects);
-  target_pc = new pointcloud(true, numObjects);
   src_pc->initCPU();
+  target_pc = new pointcloud(true, numObjects);
   target_pc->initCPU();
 }
 

@@ -103,8 +103,11 @@ bool init(int argc, char **argv) {
   cudaGLRegisterBufferObject(boidVBO_velocities);
 
   // Initialize N-body simulation
-  ScanMatch::initSimulation(TRUE_N);
-
+#if CPU
+  ScanMatch::initSimulationCPU(TRUE_N);
+#elif GPU_NAIVE
+  ScanMatch::initSimulationGPU(TRUE_N);
+#endif
   updateCamera();
 
   initShaders(program);

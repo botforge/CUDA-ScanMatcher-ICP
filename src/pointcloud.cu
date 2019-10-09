@@ -4,6 +4,8 @@
 
 #define blockSize 128
 #define checkCUDAErrorWithLine(msg) checkCUDAError(msg, __LINE__)
+#define ORANGE glm::vec3(1.0f, 0.5f, 0.1f)
+#define GREEN glm::vec3(0.f, 0.9f, 0.2f)
 
 __host__ __device__ unsigned int hash(unsigned int a) {
   a = (a + 0x7ed55d16) + (a << 12);
@@ -242,18 +244,23 @@ void pointcloud::initGPU(std::vector<glm::vec3> coords) {
 	utilityCore::checkCUDAErrorWithLine("cudaMalloc dev_rgb failed");
 	printf("SIZE IS: %d \n", coords.size());
 	if (coords.size() > 0) {
-		buildWaymoGPU(coords);
+		buildCoordsGPU(coords);
 	}
 	else {
 		buildSinusoidGPU();
 	}
 }
 
-void pointcloud::buildWaymoGPU(std::vector<glm::vec3> coords) {
+void pointcloud::buildCoordsGPU(std::vector<glm::vec3> coords) {
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
-	glm::vec3* waymoPos = &coords[0];
-	cudaMemcpy(dev_pos, waymoPos, N * sizeof(glm::vec3), cudaMemcpyHostToDevice);
-	kernSetRGB<<<fullBlocksPerGrid, blockSize>>>(dev_rgb, glm::vec3(1.0f, 1.0f, 1.0f), N);
+	glm::vec3* coordPos = &coords[0];
+	cudaMemcpy(dev_pos, coordPos, N * sizeof(glm::vec3), cudaMemcpyHostToDevice);
+	if (isTarget) {
+		kernSetRGB<<<fullBlocksPerGrid, blockSize>>>(dev_rgb, GREEN, N);
+	}
+	else {
+		kernSetRGB<<<fullBlocksPerGrid, blockSize>>>(dev_rgb, ORANGE, N);
+	}
 }
 
 /**

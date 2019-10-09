@@ -5,11 +5,11 @@
 // ================
 
 #define VISUALIZE 1
-#define STEP false
+#define STEP true
 #define CPU false
 #define GPU_NAIVE true
 #define GPU_OCTREE false
-#define WAYMO true;
+#define MODEL true;
 #define UNIFORM_GRID 0
 #define COHERENT_GRID 0
 
@@ -24,10 +24,8 @@
 */
 int main(int argc, char* argv[]) {
   projectName = "CUDA Scan Matching";
-#if WAYMO
-	  N_FOR_VIS = 10104 * 2;
-	  TRUE_N = N_FOR_VIS / 2;
-	  parseWaymo();
+#if MODEL
+	  parseModel();
 #endif
   if (init(argc, argv)) {
     mainLoop();
@@ -38,10 +36,11 @@ int main(int argc, char* argv[]) {
   }
 }
 
-void parseWaymo() {
-	std::ifstream waymoFile("../waymo.txt");
+void parseModel() {
+	int counter = 0;
+	std::ifstream waymoFile("../bigwaymo.txt");
 	std::string line;
-	printf("OPENING WAYMO.TXT \n");
+	printf("OPENING MODEL \n");
 	float x, y, z;
 	while (std::getline(waymoFile, line)) {
 		//std::cout << line << std::endl;
@@ -51,7 +50,10 @@ void parseWaymo() {
 		ss >> z;
 		glm::vec3 point(x, y, z);
 		coords.push_back(point);
+		++counter;
 	}
+  N_FOR_VIS = counter * 2;
+  TRUE_N = N_FOR_VIS / 2;
 }
 
 //-------------------------------

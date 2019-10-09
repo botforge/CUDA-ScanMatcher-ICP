@@ -195,6 +195,8 @@ void initShaders(GLuint * program) {
     // execute the kernel call Step Here
 #if CPU
 	ScanMatch::stepICPCPU();
+#elif GPU_NAIVE
+	ScanMatch::stepICPGPU_NAIVE();
 #endif
     #if VISUALIZE
     ScanMatch::copyPointCloudToVBO(dptrVertPositions, dptrVertVelocities, CPU);

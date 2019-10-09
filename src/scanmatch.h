@@ -28,4 +28,5 @@ namespace ScanMatch {
     void initSimulationGPU(int N);
 	void stepICPGPU_NAIVE();
 	void findNNGPU_NAIVE(pointcloud* src, pointcloud* target, float* dist, int* indicies, int N);
+	void reshuffleGPU(pointcloud* a, int* indicies, int N);
 } 

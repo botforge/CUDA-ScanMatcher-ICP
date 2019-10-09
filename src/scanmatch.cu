@@ -346,9 +346,9 @@ void ScanMatch::stepICPGPU_NAIVE() {
 
 	//1: Find Nearest Neigbors and Reshuffle
 	ScanMatch::findNNGPU_NAIVE(src_pc, target_pc, dist, indicies, numObjects);
-
+	ScanMatch::reshuffleGPU(target_pc, indicies, numObjects);
+	
 	/*
-	ScanMatch::reshuffleCPU(target_pc, indicies, numObjects);
 
 	//2: Find Best Fit Transformation
 	glm::mat3 R;
@@ -401,5 +401,24 @@ void ScanMatch::findNNGPU_NAIVE(pointcloud* src, pointcloud* target, float* dist
 	//Launch a kernel (paralellely compute NN for each point)
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 	kernNNGPU_NAIVE<<<fullBlocksPerGrid, blockSize>>>(src->dev_pos, target->dev_pos, dist, indicies, N);
+}
+
+/*
+ * Parallely reshuffle pos by indicies and fill matches
+ */
+__global__ void kernReshuffleGPU(glm::vec3* pos, glm::vec3* matches, int *indicies, int N) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+	  matches[idx] = pos[indicies[idx]];
+  }
+}
+
+/**
+ * Reshuffles pointcloud a as per indicies, puts these in dev_matches
+ * NOT ONE TO ONE SO NEED TO MAKE A COPY!
+*/
+void ScanMatch::reshuffleGPU(pointcloud* a, int* indicies, int N) {
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	kernReshuffleGPU<<<fullBlocksPerGrid, blockSize>>>(a->dev_pos, a->dev_matches, indicies, N);
 }
 

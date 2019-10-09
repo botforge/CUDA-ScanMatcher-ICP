@@ -81,9 +81,8 @@ void ScanMatch::initSimulation(int N) {
 
   //Setup and initialize source and target pointcloud
   src_pc = new pointcloud(false, numObjects);
-  src_pc->initCPU();
-
   target_pc = new pointcloud(true, numObjects);
+  src_pc->initCPU();
   target_pc->initCPU();
 }
 

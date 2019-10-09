@@ -18,7 +18,7 @@
 
 #define checkCUDAErrorWithLine(msg) utilityCore::checkCUDAError(msg, __LINE__)
 
-#define DEBUG false
+#define DEBUG true
 
 /*****************
 * Configuration *
@@ -286,7 +286,7 @@ void ScanMatch::bestFitTransform(pointcloud* src, pointcloud* target, int N, glm
 __global__ void kernUpdatePositions(glm::vec3* src_pos, glm::mat3 R, glm::vec3 t, int N) {
   int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
   if (idx < N) {
-	  src_pos[idx] = R * src_pos[idx] + t;
+	  src_pos[idx] = (R) * src_pos[idx] + t;
   }
 }
 
@@ -297,25 +297,27 @@ __global__ void kernUpdatePositions(glm::vec3* src_pos, glm::mat3 R, glm::vec3 t
 void ScanMatch::stepICPGPU_NAIVE() {
 
 	//cudaMalloc dist and indicies
-	float* dist = new float[numObjects];
-	int* indicies = new int[numObjects];
+	float* dist;
+	int* indicies;
 
 	cudaMalloc((void**)&dist, numObjects * sizeof(float));
 	utilityCore::checkCUDAError("cudaMalloc dist failed", __LINE__);
 
 	cudaMalloc((void**)&indicies, numObjects * sizeof(int));
 	utilityCore::checkCUDAError("cudaMalloc indicies failed", __LINE__);
+	//cudaMemset(dist, 0, numObjects * sizeof(float));
+	//cudaMemset(indicies, -1, numObjects * sizeof(int));
 
 	//1: Find Nearest Neigbors and Reshuffle
 	ScanMatch::findNNGPU_NAIVE(src_pc, target_pc, dist, indicies, numObjects);
+	cudaDeviceSynchronize();
 	ScanMatch::reshuffleGPU(target_pc, indicies, numObjects);
-	
-
+	cudaDeviceSynchronize();
 	//2: Find Best Fit Transformation
 	glm::mat3 R;
 	glm::vec3 t;
-	//ScanMatch::bestFitTransformGPU(src_pc, target_pc, numObjects, R, t);
-
+	ScanMatch::bestFitTransformGPU(src_pc, target_pc, numObjects, R, t);
+	cudaDeviceSynchronize();
 
 	//3: Update each src_point via Kernel Call
 	dim3 fullBlocksPerGrid((numObjects + blockSize - 1) / blockSize);
@@ -337,7 +339,8 @@ __global__ void kernNNGPU_NAIVE(glm::vec3* src_pos, glm::vec3* target_pos, float
 	  glm::vec3 src_pt = src_pos[idx];
 	  for (int tgt_idx = 0; tgt_idx < N; ++tgt_idx) { //Iterate through each tgt & find closest
 		  glm::vec3 tgt_pt = target_pos[tgt_idx];
-		  float d = sqrtf(powf((tgt_pt.x - src_pt.x), 2.f) + powf((tgt_pt.y - src_pt.y), 2.f) + powf((tgt_pt.z - src_pt.z), 2.f));
+		  float d = glm::distance(src_pt, tgt_pt);
+		  //float d = sqrtf(powf((tgt_pt.x - src_pt.x), 2.f) + powf((tgt_pt.y - src_pt.y), 2.f) + powf((tgt_pt.z - src_pt.z), 2.f));
 		  if (d < minDist) {
 			  minDist = d;
 			  idx_minDist = tgt_idx;
@@ -391,8 +394,10 @@ __global__ void kernComputeNorms(glm::vec3* src_norm, glm::vec3* target_norm, gl
 __global__ void kernComputeHarray(glm::mat3* Harray, glm::vec3* src_norm, glm::vec3* target_norm, int N) {
   int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
   if (idx < N) {
-	  Harray[idx] = glm::mat3((src_norm[idx] * target_norm[idx].x), (src_norm[idx] * target_norm[idx].y), (src_norm[idx] * target_norm[idx].z));
-  }
+	  Harray[idx] = glm::mat3(glm::vec3(src_norm[idx]) * target_norm[idx].x,
+		  glm::vec3(src_norm[idx]) * target_norm[idx].y,
+		  glm::vec3(src_norm[idx] * target_norm[idx].z));
+ }
 }
 
 /**
@@ -409,35 +414,54 @@ void ScanMatch::bestFitTransformGPU(pointcloud* src, pointcloud* target, int N, 
 	cudaMalloc((void**)&src_norm, N * sizeof(glm::vec3));
 	cudaMalloc((void**)&target_norm, N * sizeof(glm::vec3));
 	cudaMalloc((void**)&Harray, N * sizeof(glm::mat3));
+	cudaMemset(Harray, 0, N * sizeof(glm::mat3));
+
 
 	//Thrust device pointers for calculating centroids
 	thrust::device_ptr<glm::vec3> src_thrustpos(src->dev_pos);
 	thrust::device_ptr<glm::vec3> target_thrustmatches(target->dev_matches);
+	thrust::device_ptr<glm::mat3> harray_thrust = thrust::device_pointer_cast(Harray);
 
 	//1: Calculate centroids
 	glm::vec3 src_centroid(0.f);
 	glm::vec3 target_centroid(0.f);
 	src_centroid = glm::vec3(thrust::reduce(src_thrustpos, src_thrustpos + N, glm::vec3(0.f), thrust::plus<glm::vec3>()));
+	cudaDeviceSynchronize();
 	target_centroid = glm::vec3(thrust::reduce(target_thrustmatches, target_thrustmatches + N, glm::vec3(0.f), thrust::plus<glm::vec3>()));
+	cudaDeviceSynchronize();
 	src_centroid /= glm::vec3(N);
 	target_centroid /= glm::vec3(N);
+
+#if DEBUG
+	printf("SRC CENTROID\n");
+	utilityCore::printVec3(src_centroid);
+	printf("TARGET CENTROID\n");
+	utilityCore::printVec3(target_centroid);
+#endif // DEBUG
 
 	//2: Compute Norm via Kernel Call
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 	kernComputeNorms<<<fullBlocksPerGrid, blockSize>>>(src_norm, target_norm, src->dev_pos, target->dev_matches, src_centroid, target_centroid, N);
-
+	cudaDeviceSynchronize();
 	utilityCore::checkCUDAError("Compute Norms Failed", __LINE__);
-	cudaThreadSynchronize();
 
 	//3:Multiply src.T (3 x N) by target (N x 3) = H (3 x 3) via a kernel call
 	kernComputeHarray<<<fullBlocksPerGrid, blockSize>>>(Harray, src_norm, target_norm, N);
-	thrust::device_ptr<glm::mat3> Harray_thrustptr(Harray);
-	glm::mat3 H;
-	H = glm::mat3(thrust::reduce(Harray_thrustptr, Harray_thrustptr + N, glm::mat3(0.f), thrust::plus<glm::mat3>()));
-
+	cudaDeviceSynchronize();
 	utilityCore::checkCUDAError("Compute HARRAY Failed", __LINE__);
-	cudaThreadSynchronize();
 
+	/*
+	glm::mat3 H = thrust::reduce(harray_thrust, harray_thrust + N, glm::mat3(0.f), thrust::plus<glm::mat3>());
+	cudaThreadSynchronize();
+	*/
+	glm::mat3* Hcpu = new glm::mat3[N];
+	cudaMemcpy(Hcpu, Harray, N * sizeof(glm::mat3), cudaMemcpyDeviceToHost);
+	utilityCore::checkCUDAError("REDUCE HARRAY Failed", __LINE__);
+	cudaDeviceSynchronize();
+	glm::mat3 H(0.f);
+	for (int i = 0; i < N; ++i) {
+		H += Hcpu[i];
+	}
 	//4:Calculate SVD of H to get U, S & V
 	float U[3][3] = { 0 };
 	float S[3][3] = { 0 };
@@ -452,6 +476,9 @@ void ScanMatch::bestFitTransformGPU(pointcloud* src, pointcloud* target, int N, 
 
 	//5:Rotation Matrix and Translation Vector
 	R = (matU * matV);
+	if (glm::determinant(R) < 0) {
+		printf("NEGATIVE DET\n");
+	}
 	t = target_centroid - R * (src_centroid);
 
 	//cudaMalloc Norms and Harray

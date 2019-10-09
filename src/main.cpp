@@ -11,7 +11,7 @@
 #define UNIFORM_GRID 0
 #define COHERENT_GRID 0
 
-const int N_FOR_VIS = 15000;
+const int N_FOR_VIS = 10;
 const int TRUE_N = N_FOR_VIS / 2;
 const float DT = 0.2f;
 

@@ -28,7 +28,8 @@ __host__ __device__ glm::vec3 generateRandomVec3(int index) {
 __global__ void kernBuildTargetSinusoid(glm::vec3* pos, glm::vec3* rgb, glm::mat4 rotationMat, float y_interval, int N) {
   int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
   if (idx < N) {
-    glm::vec3 t = generateRandomVec3(idx);
+    //glm::vec3 t = generateRandomVec3(idx);
+	glm::vec3 t(0.0f, 0.0f, 0.0f);
     pos[idx].x = 0.7;
     pos[idx].y = idx * y_interval;
     pos[idx].z = sinf(idx*y_interval);
@@ -45,7 +46,8 @@ __global__ void kernBuildTargetSinusoid(glm::vec3* pos, glm::vec3* rgb, glm::mat
 __global__ void kernBuildSrcSinusoid(glm::vec3* pos, glm::vec3* rgb, glm::mat4 rotationMat, float y_interval, int N) {
   int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
   if (idx < N) {
-    glm::vec3 t = generateRandomVec3(idx);
+    //glm::vec3 t = generateRandomVec3(idx);
+	glm::vec3 t(0.1f, 0.0f, 0.0f);
     pos[idx].x = 0.7;
     pos[idx].y = idx * y_interval;
     pos[idx].z = sinf(idx*y_interval);
@@ -225,8 +227,9 @@ void pointcloud::buildSinusoidGPU() {
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 	float y_interval = (2.5 * PI) / N;
 
-	glm::vec3 r(0.1f, 0.2f, 0.3f);
-	float angle = -1.f * PI;
+	glm::vec3 r(0.f, 0.2f, 1.f);
+	float angle = -0.7f * PI;
+	//float angle = 0.0f;
 	glm::mat4 rotationMat = glm::rotate(angle, r);
 	
 	if (isTarget) {

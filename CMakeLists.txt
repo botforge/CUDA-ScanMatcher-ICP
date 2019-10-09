@@ -65,6 +65,7 @@ set(headers
     src/cudaMat4.hpp
     src/glslUtility.hpp
     src/scanmatch.h
+    src/octree.h
     src/main.hpp
     src/pointcloud.h
     src/utilityCore.hpp
@@ -73,6 +74,7 @@ set(headers
 set(sources
     src/glslUtility.cpp
     src/scanmatch.cu
+    src/octree.cu
     src/main.cpp
     src/pointcloud.cu
     src/utilityCore.cpp

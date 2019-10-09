@@ -53,6 +53,9 @@ glm::vec3 cameraPosition;
 
 glm::mat4 projection;
 
+//Parsing Waymo
+void parseWaymo();
+
 //====================================
 // Main
 //====================================

@@ -86,6 +86,16 @@ void ScanMatch::initSimulationCPU(int N) {
   target_pc->initCPU();
 }
 
+void ScanMatch::initSimulationGPU(int N) {
+  numObjects = N;
+
+  //Setup and initialize source and target pointcloud
+  src_pc = new pointcloud(false, numObjects);
+  src_pc->initGPU();
+  target_pc = new pointcloud(true, numObjects);
+  target_pc->initGPU();
+}
+
 /******************
 * copyPointCloudToVBO *
 ******************/

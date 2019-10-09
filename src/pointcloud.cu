@@ -141,6 +141,20 @@ void pointcloud::pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb
 	dev_tempcpurgb = tempRGB;
 }
 
+/******************
+* GPU Methods *
+******************/
+
+/**
+ * Initialize and fills dev_pos and dev_rgb array in CPU
+*/
+void pointcloud::initGPU() {
+	dev_pos = new glm::vec3[N];
+	dev_matches = new glm::vec3[N];
+	dev_rgb = new glm::vec3[N];
+	buildSinusoidCPU();
+}
+
 pointcloud::~pointcloud() {
 	cudaFree(dev_tempcpupos);
 	cudaFree(dev_tempcpurgb);

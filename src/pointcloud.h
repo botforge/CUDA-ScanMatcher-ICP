@@ -32,5 +32,8 @@ public:
 	void buildSinusoidCPU();
     void pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
 
+	//GPU METHODS
+	void initGPU();
+
 	~pointcloud();
 };

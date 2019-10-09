@@ -5,8 +5,8 @@
 // ================
 
 #define VISUALIZE 1
-#define CPU true
-#define GPU_NAIVE false
+#define CPU false
+#define GPU_NAIVE true
 #define GPU_OCTREE false
 #define UNIFORM_GRID 0
 #define COHERENT_GRID 0

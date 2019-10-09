@@ -34,7 +34,7 @@
  * FOR WAYMO DATASET: 1 << 5;
 */
 
-#define scene_scale 1 << 2
+#define scene_scale 1 << 4
 
 /***********************************************
 * Kernel state (pointers are device pointers) *

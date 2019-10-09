@@ -89,7 +89,7 @@ __global__ void kernCopyPositionsToVBO(int N, glm::vec3 *pos, float *vbo, float 
   if (index < N) {
 	index += vbo_offset;
 	vbo[4 * index + 0] = pos[index].x * c_scale - 0.f;
-    vbo[4 * index + 1] = (pos[index].y+0.5f) * c_scale;
+    vbo[4 * index + 1] = (pos[index].y-6.f) * c_scale;
     vbo[4 * index + 2] = pos[index].z * c_scale;
     vbo[4 * index + 3] = 1.0f;
   }

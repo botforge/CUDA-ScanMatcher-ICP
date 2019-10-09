@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
 void parseModel() {
 	int counter = 0;
-	std::ifstream waymoFile("../bunny.ply");
+	std::ifstream waymoFile("../buddha.ply");
 	std::string line;
 	printf("OPENING MODEL \n");
 	float x, y, z;

@@ -268,10 +268,10 @@ void pointcloud::buildCoordsGPU(std::vector<glm::vec3> coords) {
 	}
 	else {
 		kernSetRGB<<<fullBlocksPerGrid, blockSize>>>(dev_rgb, ORANGE, N);
-		float angle = 0.7 * PI;
+		float angle = 0.1 * PI;
 		glm::vec3 axis(1.f, 0.f, 0.f);
 		//glm::vec3 t(1.0, 0.f, 0.f);
-		glm::vec3 t(1.0, -3.f, -200.f);
+		glm::vec3 t(9.0, 0.f, 0.f);
 		glm::mat4 rotationMatrix = glm::rotate(angle, axis);
 		kernRotTrans << <fullBlocksPerGrid, blockSize >> > (dev_pos, rotationMatrix, t, N);
 	}

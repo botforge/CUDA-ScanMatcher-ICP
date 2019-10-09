@@ -26,4 +26,6 @@ namespace ScanMatch {
 
 	//GPU_NAIVE SCANMATCHING
     void initSimulationGPU(int N);
+	void stepICPGPU_NAIVE();
+	void findNNGPU_NAIVE(pointcloud* src, pointcloud* target, float* dist, int* indicies, int N);
 } 

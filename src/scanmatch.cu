@@ -58,9 +58,9 @@ void ScanMatch::initSimulationCPU(int N) {
   numObjects = N;
 
   //Setup and initialize source and target pointcloud
-  src_pc = new pointcloud(false, numObjects);
+  src_pc = new pointcloud(false, numObjects, false);
   src_pc->initCPU();
-  target_pc = new pointcloud(true, numObjects);
+  target_pc = new pointcloud(true, numObjects, false);
   target_pc->initCPU();
 }
 
@@ -68,9 +68,9 @@ void ScanMatch::initSimulationGPU(int N) {
   numObjects = N;
 
   //Setup and initialize source and target pointcloud
-  src_pc = new pointcloud(false, numObjects);
+  src_pc = new pointcloud(false, numObjects, true);
   src_pc->initGPU();
-  target_pc = new pointcloud(true, numObjects);
+  target_pc = new pointcloud(true, numObjects, true);
   target_pc->initGPU();
 }
 
@@ -323,3 +323,83 @@ void ScanMatch::bestFitTransform(pointcloud* src, pointcloud* target, int N, glm
 	utilityCore::printVec3(t);
 #endif // DEBUG
 }
+
+/******************
+* GPU NAIVE SCANMATCHING *
+******************/
+
+/**
+ * Main Algorithm for Running ICP on the GPU
+ * Finds homogenous transform between src_pc and target_pc 
+*/
+void ScanMatch::stepICPGPU_NAIVE() {
+
+	//cudaMalloc dist and indicies
+	float* dist = new float[numObjects];
+	int* indicies = new int[numObjects];
+
+	cudaMalloc((void**)&dist, numObjects * sizeof(float));
+	utilityCore::checkCUDAError("cudaMalloc dist failed", __LINE__);
+
+	cudaMalloc((void**)&indicies, numObjects * sizeof(int));
+	utilityCore::checkCUDAError("cudaMalloc indicies failed", __LINE__);
+
+	//1: Find Nearest Neigbors and Reshuffle
+	ScanMatch::findNNGPU_NAIVE(src_pc, target_pc, dist, indicies, numObjects);
+
+	/*
+	ScanMatch::reshuffleCPU(target_pc, indicies, numObjects);
+
+	//2: Find Best Fit Transformation
+	glm::mat3 R;
+	glm::vec3 t;
+	ScanMatch::bestFitTransform(src_pc, target_pc, numObjects, R, t);
+
+
+	//3: Update each src_point
+	glm::vec3* src_dev_pos = src_pc->dev_pos;
+	for (int i = 0; i < numObjects; ++i) {
+		src_dev_pos[i] = glm::transpose(R) * src_dev_pos[i] + t;
+	}
+
+	//cudaFree dist and indicies
+	cudaFree(dist);
+	cudaFree(indicies);
+	*/
+}
+
+/*
+ * Parallely compute NN for each point in the pointcloud
+ */
+__global__ void kernNNGPU_NAIVE(glm::vec3* src_pos, glm::vec3* target_pos, float* dist, int* indicies, int N) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+	  float minDist = INFINITY;
+	  float idx_minDist = -1;
+	  glm::vec3 src_pt = src_pos[idx];
+	  for (int tgt_idx = 0; tgt_idx < N; ++tgt_idx) { //Iterate through each tgt & find closest
+		  glm::vec3 tgt_pt = target_pos[tgt_idx];
+		  float d = sqrtf(powf((tgt_pt.x - src_pt.x), 2.f) + powf((tgt_pt.y - src_pt.y), 2.f) + powf((tgt_pt.z - src_pt.z), 2.f));
+		  if (d < minDist) {
+			  minDist = d;
+			  idx_minDist = tgt_idx;
+		  }
+	  }
+	  dist[idx] = minDist;
+	  indicies[idx] = idx_minDist;
+  }
+}
+
+/**
+ * Finds Nearest Neighbors of target pc in src pc
+ * @args: src, target -> PointClouds w/ filled dev_pos IN GPU
+ * @returns: 
+	* dist -> N array -> ith index = dist(src[i], closest_point in target) (on GPU)
+	* indicies -> N array w/ ith index = index of the closest point in target to src[i] (on GPU)
+*/
+void ScanMatch::findNNGPU_NAIVE(pointcloud* src, pointcloud* target, float* dist, int *indicies, int N) {
+	//Launch a kernel (paralellely compute NN for each point)
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	kernNNGPU_NAIVE<<<fullBlocksPerGrid, blockSize>>>(src->dev_pos, target->dev_pos, dist, indicies, N);
+}
+

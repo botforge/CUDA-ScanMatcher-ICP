@@ -26,10 +26,12 @@ public:
 	glm::vec3 *dev_tempcpupos;
 	glm::vec3 *dev_tempcpurgb;
 	bool isTarget; 
+	bool isGPU;
 	int N; //Number of points
 	
 	pointcloud();
 	pointcloud(bool target, int num_points);
+	pointcloud(bool target, int num_points, bool isGPU);
 
 	//CPU METHODS
 	void initCPU();

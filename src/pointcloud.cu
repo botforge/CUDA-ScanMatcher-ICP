@@ -95,6 +95,8 @@ pointcloud::pointcloud(): isTarget(false), N(500){
 pointcloud::pointcloud(bool target, int numPoints): isTarget(target), N(numPoints){
 }
 
+pointcloud::pointcloud(bool target, int numPoints, bool gpu): isTarget(target), N(numPoints), isGPU(gpu){
+}
 
 /******************
 * CPU Methods *
@@ -248,6 +250,12 @@ void pointcloud::pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb
 
 
 pointcloud::~pointcloud() {
-	//cudaFree(dev_tempcpupos);
-	//cudaFree(dev_tempcpurgb);
+	if (isGPU) {
+		cudaFree(dev_pos);
+		cudaFree(dev_rgb);
+	}
+	else {
+		cudaFree(dev_tempcpupos);
+		cudaFree(dev_tempcpurgb);
+	}
 }

@@ -39,6 +39,7 @@ extern std::istream& safeGetline(std::istream& is, std::string& t); //Thanks to 
 //-------GLM Printers----------
 //-----------------------------
 extern void printMat4(const glm::mat4 &);
+extern void printMat3(const glm::mat3 &);
 extern void printVec4(const glm::vec4 &);
 extern void printVec3(const glm::vec3 &);
 }

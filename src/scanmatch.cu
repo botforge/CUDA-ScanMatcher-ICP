@@ -18,6 +18,8 @@
 
 #define checkCUDAErrorWithLine(msg) utilityCore::checkCUDAError(msg, __LINE__)
 
+#define DEBUG false
+
 /*****************
 * Configuration *
 *****************/
@@ -175,7 +177,15 @@ void ScanMatch::stepICPCPU() {
 	//1: Find Nearest Neigbors and Reshuffle
 	float* dist = new float[numObjects];
 	int* indicies = new int[numObjects];
+#if DEBUG
+	printf("NEAREST NEIGHBORS \n");
+#endif // DEBUG
+
 	ScanMatch::findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
+#if DEBUG
+	printf("RESHUFFLE\n");
+#endif // DEBUG
+
 	ScanMatch::reshuffleCPU(target_pc, indicies, numObjects);
 
 	//2: Find Best Fit Transformation
@@ -183,10 +193,11 @@ void ScanMatch::stepICPCPU() {
 	glm::vec3 t;
 	ScanMatch::bestFitTransform(src_pc, target_pc, numObjects, R, t);
 
+
 	//3: Update each src_point
 	glm::vec3* src_dev_pos = src_pc->dev_pos;
 	for (int i = 0; i < numObjects; ++i) {
-		src_dev_pos[i] = src_dev_pos[i] + t;
+		src_dev_pos[i] = glm::transpose(R) * src_dev_pos[i] + t;
 	}
 }
 
@@ -213,6 +224,12 @@ void ScanMatch::findNNCPU(pointcloud* src, pointcloud* target, float* dist, int 
 			}
 		}
 		//Update dist and indicies
+
+#if DEBUG
+		printf("IDX: %d - MINDIST %f\n", src_idx, minDist);
+		printf("IDX: %d - indicies %d\n", src_idx, idx_minDist);
+#endif // DEBUG
+
 		dist[src_idx] = minDist;
 		indicies[src_idx] = idx_minDist;
 	}
@@ -227,6 +244,13 @@ void ScanMatch::reshuffleCPU(pointcloud* a, int* indicies, int N) {
 	glm::vec3 *a_dev_pos = a->dev_pos;
 	for (int i = 0; i < N; ++i) {
 		a_dev_matches[i] = a_dev_pos[indicies[i]];
+
+#if DEBUG
+		printf("DEV MATCHES\n");
+		utilityCore::printVec3(a->dev_matches[i]);
+		printf("DEV POS\n");
+		utilityCore::printVec3(a_dev_pos[i]);
+#endif // DEBUG
 	}
 }
 
@@ -240,7 +264,7 @@ void ScanMatch::bestFitTransform(pointcloud* src, pointcloud* target, int N, glm
 	glm::vec3 src_centroid(0.f);
 	glm::vec3 target_centroid(0.f);
 	glm::vec3* src_pos = src->dev_pos;
-	glm::vec3* target_matches = src->dev_matches;
+	glm::vec3* target_matches = target->dev_matches;
 
 	//1:Calculate centroids and norm src and target
 	for (int i = 0; i < N; ++i) {
@@ -249,9 +273,23 @@ void ScanMatch::bestFitTransform(pointcloud* src, pointcloud* target, int N, glm
 	}
 	src_centroid = src_centroid / glm::vec3(N);
 	target_centroid = target_centroid / glm::vec3(N);
+
+#if DEBUG
+	printf("SRC CENTROID\n");
+	utilityCore::printVec3(src_centroid);
+	printf("TARGET CENTROID\n");
+	utilityCore::printVec3(target_centroid);
+#endif // DEBUG
+
 	for (int j = 0; j < N; ++j) {
 		src_norm[j] = src_pos[j]  - src_centroid;
 		target_norm[j] = target_matches[j] - target_centroid;
+#if DEBUG
+		printf("SRC NORM IDX %d\n", j);
+		utilityCore::printVec3(src_norm[j]);
+		printf("TARGET NORM IDX %d\n", j);
+		utilityCore::printVec3(target_norm[j]);
+#endif // DEBUG
 	}
 
 	//1:Multiply src.T (3 x N) by target (N x 3) = H (3 x 3)
@@ -259,24 +297,46 @@ void ScanMatch::bestFitTransform(pointcloud* src, pointcloud* target, int N, glm
 	for (int i = 0; i < N; ++i) { //3 x N by N x 3 matmul
 		for (int out_row = 0; out_row < 3; out_row++) {
 			for (int out_col = 0; out_col < 3; out_col++) {
-				H[out_row][out_col] += src_norm[i][out_row] + target_norm[i][out_col];
+				H[out_row][out_col] += src_norm[i][out_row] * target_norm[i][out_col];
 			}
 		}
 	}
+	
+#if DEBUG
+	printf("H MATRIX ======================================================\n");
+    std::cout << H[0][0] << " " << H[1][0] << " " << H[2][0] << " " << std::endl;
+    std::cout << H[0][1] << " " << H[1][1] << " " << H[2][1] << " " << std::endl;
+    std::cout << H[0][2] << " " << H[1][2] << " " << H[2][2] << " " << std::endl;
+	printf("======================================================\n");
+#endif // DEBUG
 
 	//2:calculate SVD of H to get U, S & V
 	float U[3][3] = { 0 };
 	float S[3][3] = { 0 };
 	float V[3][3] = { 0 };
-	//svd(H[0][0], H[0][1], H[0][2], H[1][0], H[1][1], H[1][2], H[2][0], H[2][1], H[2][2],
-		//U[0][0], U[0][1], U[0][2], U[1][0], U[1][1], U[1][2], U[2][0], U[2][1], U[2][2],
-		//S[0][0], S[0][1], S[0][2], S[1][0], S[1][1], S[1][2], S[2][0], S[2][1], S[2][2],
-		//V[0][0], V[0][1], V[0][2], V[1][0], V[1][1], V[1][2], V[2][0], V[2][1], V[2][2]
-		//);
+	svd(H[0][0], H[0][1], H[0][2], H[1][0], H[1][1], H[1][2], H[2][0], H[2][1], H[2][2],
+		U[0][0], U[0][1], U[0][2], U[1][0], U[1][1], U[1][2], U[2][0], U[2][1], U[2][2],
+		S[0][0], S[0][1], S[0][2], S[1][0], S[1][1], S[1][2], S[2][0], S[2][1], S[2][2],
+		V[0][0], V[0][1], V[0][2], V[1][0], V[1][1], V[1][2], V[2][0], V[2][1], V[2][2]
+		);
 	glm::mat3 matU(glm::vec3(U[0][0], U[1][0], U[2][0]), glm::vec3(U[0][1], U[1][1], U[2][1]), glm::vec3(U[0][2], U[1][2], U[2][2]));
 	glm::mat3 matV(glm::vec3(V[0][0], V[0][1], V[0][2]), glm::vec3(V[1][0], V[1][1], V[1][2]), glm::vec3(V[2][0], V[2][1], V[2][2]));
 
+#if DEBUG
+	printf("U MATRIX\n");
+	utilityCore::printMat3(matU);
+	printf("V MATRIX\n");
+	utilityCore::printMat3(matV);
+#endif // DEBUG
+
 	//2:Rotation Matrix and Translation Vector
-	R = glm::transpose(matU * matV);
+	R = (matU * matV);
 	t = target_centroid - R * (src_centroid);
+
+#if DEBUG
+	printf("ROTATION\n");
+	utilityCore::printMat3(R);
+	printf("TRANSLATION\n");
+	utilityCore::printVec3(t);
+#endif // DEBUG
 }

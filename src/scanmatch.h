@@ -22,5 +22,5 @@ namespace ScanMatch {
 	void stepICPCPU();
 	void findNNCPU(pointcloud* src, pointcloud* target, float* dist, int* indicies, int N);
 	void reshuffleCPU(pointcloud* a, int* indicies, int N);
-	void bestFitTransform(pointcloud* src, pointcloud* target, glm::mat4 *T, int N);
+	void bestFitTransform(pointcloud* src, pointcloud* target, int N, glm::mat3 &R, glm::vec3 &t);
 } 

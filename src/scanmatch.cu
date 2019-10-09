@@ -6,9 +6,6 @@
 #include "utilityCore.hpp"
 #include "scanmatch.h"
 
-#define MAX_ICP_ITERS 5
-#define EPSILON 0.001
-
 // LOOK-2.1 potentially useful for doing grid-based neighbor search
 #ifndef imax
 #define imax( a, b ) ( ((a) > (b)) ? (a) : (b) )
@@ -179,7 +176,19 @@ void ScanMatch::stepICPCPU() {
 	int* indicies = new int[numObjects];
 	ScanMatch::findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
 	ScanMatch::reshuffleCPU(target_pc, indicies, numObjects);
+
+	//2: Find Best Fit Transformation
+	glm::mat3 R;
+	glm::vec3 t;
+	//ScanMatch::bestFitTransform(src_pc, target_pc, numObjects, R, t);
+
+	//3: Update each src_point
+	//glm::vec3* src_dev_pos = src_pc->dev_pos;
+	//for (int i = 0; i < numObjects; ++i) {
+		//src_dev_pos[i] = R * src_dev_pos[i] + t;
+	//}
 }
+
 /**
  * Finds Nearest Neighbors of target pc in src pc
  * @args: src, target -> PointClouds w/ filled dev_pos
@@ -224,21 +233,49 @@ void ScanMatch::reshuffleCPU(pointcloud* a, int* indicies, int N) {
  * Calculates transform T that maps from src to target
  * Assumes dev_matches is filled for target
 */
-void bestFitTransform(pointcloud* src, pointcloud* target, glm::mat4 *T, int N){
+void ScanMatch::bestFitTransform(pointcloud* src, pointcloud* target, int N, glm::mat3 &R, glm::vec3 &t){
 	glm::vec3* src_norm = new glm::vec3[N];
 	glm::vec3* target_norm = new glm::vec3[N];
-	glm::vec3 src_sum(0.f);
-	glm::vec3 target_sum(0.f);
+	glm::vec3 src_centroid(0.f);
+	glm::vec3 target_centroid(0.f);
 	glm::vec3* src_pos = src->dev_pos;
 	glm::vec3* target_matches = src->dev_matches;
 
 	//1:Calculate centroids and norm src and target
 	for (int i = 0; i < N; ++i) {
-		src_sum += src_pos[i];
-		target_sum += target_matches[i];
+		src_centroid += src_pos[i];
+		target_centroid += target_matches[i];
 	}
+	src_centroid = src_centroid / glm::vec3(N);
+	target_centroid = target_centroid / glm::vec3(N);
 	for (int j = 0; j < N; ++j) {
-		src_norm[j] = src_pos[j]  - src_sum/glm::vec3(N);
-		target_norm[j] = target_matches[j] - target_sum/glm::vec3(N);
+		src_norm[j] = src_pos[j]  - src_centroid;
+		target_norm[j] = target_matches[j] - target_centroid;
 	}
+
+	//1:Multiply src.T (3 x N) by target (N x 3) = H (3 x 3)
+	float H[3][3] = { 0 };
+	for (int i = 0; i < N; ++i) { //3 x N by N x 3 matmul
+		for (int out_row = 0; out_row < 3; out_row++) {
+			for (int out_col = 0; out_col < 3; out_col++) {
+				H[out_row][out_col] += src_norm[i][out_row] + target_norm[i][out_col];
+			}
+		}
+	}
+
+	//2:calculate SVD of H to get U, S & V
+	float U[3][3] = { 0 };
+	float S[3][3] = { 0 };
+	float V[3][3] = { 0 };
+	//svd(H[0][0], H[0][1], H[0][2], H[1][0], H[1][1], H[1][2], H[2][0], H[2][1], H[2][2],
+		//U[0][0], U[0][1], U[0][2], U[1][0], U[1][1], U[1][2], U[2][0], U[2][1], U[2][2],
+		//S[0][0], S[0][1], S[0][2], S[1][0], S[1][1], S[1][2], S[2][0], S[2][1], S[2][2],
+		//V[0][0], V[0][1], V[0][2], V[1][0], V[1][1], V[1][2], V[2][0], V[2][1], V[2][2]
+		//);
+	glm::mat3 matU(glm::vec3(U[0][0], U[1][0], U[2][0]), glm::vec3(U[0][1], U[1][1], U[2][1]), glm::vec3(U[0][2], U[1][2], U[2][2]));
+	glm::mat3 matV(glm::vec3(V[0][0], V[0][1], V[0][2]), glm::vec3(V[1][0], V[1][1], V[1][2]), glm::vec3(V[2][0], V[2][1], V[2][2]));
+
+	//2:Rotation Matrix and Translation Vector
+	R = matU * matV;
+	t = target_centroid - R * (src_centroid);
 }

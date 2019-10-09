@@ -22,7 +22,7 @@
 #define _gamma 5.828427124 // FOUR_GAMMA_SQUARED = sqrt(8)+3;
 #define _cstar 0.923879532 // cos(pi/8)
 #define _sstar 0.3826834323 // sin(p/8)
-#define EPSILON 1e-6
+//#define EPSILON 1e-6
 
 #include <math.h>
 
@@ -33,18 +33,6 @@ http://www.lomont.org/Math/Papers/2003/InvSqrt.pdf
 http://playstation2-linux.com/download/p2lsd/fastrsqrt.pdf
 http://www.beyond3d.com/content/articles/8/
 */
-inline float rsqrt(float x) {
-// int ihalf = *(int *)&x - 0x00800000; // Alternative to next line,
-// float xhalf = *(float *)&ihalf;      // for sufficiently large nos.
-   float xhalf = 0.5f*x;
-   int i = *(int *)&x;          // View x as an int.
-// i = 0x5f3759df - (i >> 1);   // Initial guess (traditional).
-   i = 0x5f375a82 - (i >> 1);   // Initial guess (slightly better).
-   x = *(float *)&i;            // View i as float.
-   x = x*(1.5f - xhalf*x*x);    // Newton step.
-// x = x*(1.5008908 - xhalf*x*x);  // Newton step for a balanced error.
-   return x;
-}
 
 /* This is rsqrt with an additional step of the Newton iteration, for
 increased accuracy. The constant 0x5f37599e makes the relative error
@@ -156,7 +144,7 @@ inline void approximateGivensQuaternion(float a11, float a12, float a22, float &
     // fast rsqrt function suffices
     // rsqrt2 (https://code.google.com/p/lppython/source/browse/algorithm/HDcode/newCode/rsqrt.c?r=26)
     // is even faster but results in too much error
-    float w = rsqrt(ch*ch+sh*sh);
+    float w = rsqrt1(ch*ch+sh*sh);
     ch=b?w*ch:(float)_cstar;
     sh=b?w*sh:(float)_sstar;
 }
@@ -282,7 +270,7 @@ void QRGivensQuaternion(float a1, float a2, float &ch, float &sh)
     ch = fabsf(a1) + fmaxf(rho,epsilon);
     bool b = a1 < 0;
     condSwap(b,sh,ch);
-    float w = rsqrt(ch*ch+sh*sh);
+    float w = rsqrt1(ch*ch+sh*sh);
     ch *= w;
     sh *= w;
 }

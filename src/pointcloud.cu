@@ -5,6 +5,52 @@
 #define blockSize 128
 #define checkCUDAErrorWithLine(msg) checkCUDAError(msg, __LINE__)
 
+__host__ __device__ unsigned int hash(unsigned int a) {
+  a = (a + 0x7ed55d16) + (a << 12);
+  a = (a ^ 0xc761c23c) ^ (a >> 19);
+  a = (a + 0x165667b1) + (a << 5);
+  a = (a + 0xd3a2646c) ^ (a << 9);
+  a = (a + 0xfd7046c5) + (a << 3);
+  a = (a ^ 0xb55a4f09) ^ (a >> 16);
+  return a;
+}
+
+__host__ __device__ glm::vec3 generateRandomVec3(int index) {
+  thrust::default_random_engine rng(hash((int)(index)));
+  thrust::uniform_real_distribution<float> unitDistrib(0, 0.1);
+
+  return glm::vec3((float)unitDistrib(rng), (float)unitDistrib(rng), (float)unitDistrib(rng));
+}
+
+/**
+* Generates Sinusoids for Target
+*/
+__global__ void kernBuildTargetSinusoid(glm::vec3* pos, glm::vec3* rgb, glm::mat4 rotationMat, float y_interval, int N) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+    glm::vec3 t = generateRandomVec3(idx);
+    pos[idx].x = 0.7;
+    pos[idx].y = idx * y_interval;
+    pos[idx].z = sinf(idx*y_interval);
+	pos[idx] = pos[idx] + t;
+  }
+}
+
+/**
+* Generates Sinusoids for SRC
+*/
+__global__ void kernBuildSrcSinusoid(glm::vec3* pos, glm::vec3* rgb, glm::mat4 rotationMat, float y_interval, int N) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+    glm::vec3 t = generateRandomVec3(idx);
+    pos[idx].x = 0.7;
+    pos[idx].y = idx * y_interval;
+    pos[idx].z = sinf(idx*y_interval);
+	glm::vec3 rotated = glm::vec3(rotationMat * glm::vec4(pos[idx], 1.0f));
+	pos[idx] = rotated + t;
+  }
+}
+
 /**
 * Copy the Pointcloud Positions into the VBO so that they can be drawn by OpenGL.
 */
@@ -149,10 +195,38 @@ void pointcloud::pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb
  * Initialize and fills dev_pos and dev_rgb array in CPU
 */
 void pointcloud::initGPU() {
-	dev_pos = new glm::vec3[N];
-	dev_matches = new glm::vec3[N];
-	dev_rgb = new glm::vec3[N];
-	buildSinusoidCPU();
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	
+	//cudaMalloc position, matches & rgb arrays
+	cudaMalloc((void**)&dev_pos, N * sizeof(glm::vec3));
+	utilityCore::checkCUDAErrorWithLine("cudaMalloc dev_pos failed");
+
+	cudaMalloc((void**)&dev_matches, N * sizeof(glm::vec3));
+	utilityCore::checkCUDAErrorWithLine("cudaMalloc dev_matches failed");
+
+	cudaMalloc((void**)&dev_rgb, N * sizeof(glm::vec3));
+	utilityCore::checkCUDAErrorWithLine("cudaMalloc dev_rgb failed");
+	buildSinusoidGPU();
+}
+
+/**
+ * Populates dev_pos with a 3D Sinusoid (with or without Noise) on the GPU
+ * Fills dev_pos & dev_rgb
+*/
+void pointcloud::buildSinusoidGPU() {
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	float y_interval = (2.5 * PI) / N;
+
+	glm::vec3 r(0.1f, 0.2f, 0.3f);
+	float angle = -1.f * PI;
+	glm::mat4 rotationMat = glm::rotate(angle, r);
+	
+	if (isTarget) {
+		kernBuildTargetSinusoid<<<fullBlocksPerGrid, blockSize>>>(dev_pos, dev_rgb, rotationMat, y_interval, N);
+	}
+	else {
+		kernBuildSrcSinusoid<<<fullBlocksPerGrid, blockSize>>>(dev_pos, dev_rgb, rotationMat, y_interval, N);
+	}
 }
 
 pointcloud::~pointcloud() {

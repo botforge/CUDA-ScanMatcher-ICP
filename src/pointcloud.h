@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <cmath>
 #include <cuda.h>
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
+#include <thrust/random.h>
+#include <thrust/device_vector.h>
 #include "utilityCore.hpp"
 
 class pointcloud {
@@ -34,6 +38,8 @@ public:
 
 	//GPU METHODS
 	void initGPU();
+	void buildSinusoidGPU();
+    //void pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
 
 	~pointcloud();
 };

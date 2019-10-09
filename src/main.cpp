@@ -5,8 +5,8 @@
 // ================
 
 #define VISUALIZE 1
-#define CPU false
-#define GPU_NAIVE true
+#define CPU true
+#define GPU_NAIVE false
 #define GPU_OCTREE false
 #define UNIFORM_GRID 0
 #define COHERENT_GRID 0
@@ -193,8 +193,9 @@ void initShaders(GLuint * program) {
     cudaGLMapBufferObject((void**)&dptrVertVelocities, boidVBO_velocities);
 
     // execute the kernel call Step Here
+#if CPU
 	ScanMatch::stepICPCPU();
-
+#endif
     #if VISUALIZE
     ScanMatch::copyPointCloudToVBO(dptrVertPositions, dptrVertVelocities);
     #endif

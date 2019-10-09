@@ -255,9 +255,7 @@ void initShaders(GLuint * program) {
         frame = 0;
       }
 
-	  if (counter < 1  && frame < 2|| counter > 1500) {
-		runCUDA();
-	  }
+	  runCUDA();
 
       std::ostringstream ss;
       ss << "[";

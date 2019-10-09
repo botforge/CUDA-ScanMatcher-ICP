@@ -18,7 +18,7 @@
 
 #define checkCUDAErrorWithLine(msg) utilityCore::checkCUDAError(msg, __LINE__)
 
-#define DEBUG true
+#define DEBUG false
 
 /*****************
 * Configuration *

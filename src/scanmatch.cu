@@ -151,15 +151,6 @@ __global__ void kernUpdatePos(int N, float dt, glm::vec3 *pos, glm::vec3 *vel) {
   pos[index] = thisPos;
 }
 
-__device__ int gridIndex3Dto1D(int x, int y, int z, int gridResolution) {
-  return x + y * gridResolution + z * gridResolution * gridResolution;
-}
-
-__global__ void kernComputeIndices(int N, int gridResolution,
-  glm::vec3 gridMin, float inverseCellWidth,
-  glm::vec3 *pos, int *indices, int *gridIndices) {
-}
-
 void ScanMatch::endSimulation() {
 	src_pc->~pointcloud();
 	target_pc->~pointcloud();

@@ -81,11 +81,13 @@ void ScanMatch::initSimulationGPU(int N) {
 /**
 * Wrapper for call to the kernCopyboidsToVBO CUDA kernel.
 */
-void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb) {
+void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb, bool usecpu) {
 
   //IF CPU
-  src_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
-  target_pc->pointCloudToVBOCPU(vbodptr_positions + 4*numObjects, vbodptr_rgb + 4*numObjects, scene_scale);
+	if (usecpu) {
+	  src_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
+	  target_pc->pointCloudToVBOCPU(vbodptr_positions + 4*numObjects, vbodptr_rgb + 4*numObjects, scene_scale);
+	}
 }
 
 

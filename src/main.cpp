@@ -197,7 +197,7 @@ void initShaders(GLuint * program) {
 	ScanMatch::stepICPCPU();
 #endif
     #if VISUALIZE
-    ScanMatch::copyPointCloudToVBO(dptrVertPositions, dptrVertVelocities);
+    ScanMatch::copyPointCloudToVBO(dptrVertPositions, dptrVertVelocities, CPU);
     #endif
     // unmap buffer object
 

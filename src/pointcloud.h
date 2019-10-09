@@ -39,7 +39,7 @@ public:
 	//GPU METHODS
 	void initGPU();
 	void buildSinusoidGPU();
-    //void pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
+    void pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
 
 	~pointcloud();
 };

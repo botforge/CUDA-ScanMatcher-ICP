@@ -33,6 +33,9 @@ __global__ void kernBuildTargetSinusoid(glm::vec3* pos, glm::vec3* rgb, glm::mat
     pos[idx].y = idx * y_interval;
     pos[idx].z = sinf(idx*y_interval);
 	pos[idx] = pos[idx] + t;
+	rgb[idx].x = 0.f;
+	rgb[idx].y = 0.9f;
+	rgb[idx].z = 0.2f;
   }
 }
 
@@ -48,6 +51,9 @@ __global__ void kernBuildSrcSinusoid(glm::vec3* pos, glm::vec3* rgb, glm::mat4 r
     pos[idx].z = sinf(idx*y_interval);
 	glm::vec3 rotated = glm::vec3(rotationMat * glm::vec4(pos[idx], 1.0f));
 	pos[idx] = rotated + t;
+	rgb[idx].x = 1.f;
+	rgb[idx].y = 0.5f;
+	rgb[idx].z = 0.1f;
   }
 }
 
@@ -229,7 +235,19 @@ void pointcloud::buildSinusoidGPU() {
 	}
 }
 
+void pointcloud::pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale) {
+	int vbo_offset = isTarget ? 0 : 0;
+
+	//Launching Kernels
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(N, dev_pos, vbodptr_positions, s_scale, vbo_offset);
+	kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(N, dev_rgb, vbodptr_rgb, s_scale, vbo_offset);
+	utilityCore::checkCUDAErrorWithLine("copyPointCloudToVBO failed!");
+	cudaDeviceSynchronize();
+}
+
+
 pointcloud::~pointcloud() {
-	cudaFree(dev_tempcpupos);
-	cudaFree(dev_tempcpurgb);
+	//cudaFree(dev_tempcpupos);
+	//cudaFree(dev_tempcpurgb);
 }

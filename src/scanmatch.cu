@@ -83,10 +83,13 @@ void ScanMatch::initSimulationGPU(int N) {
 */
 void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb, bool usecpu) {
 
-  //IF CPU
-	if (usecpu) {
+	if (usecpu) { //IF CPU
 	  src_pc->pointCloudToVBOCPU(vbodptr_positions, vbodptr_rgb, scene_scale);
 	  target_pc->pointCloudToVBOCPU(vbodptr_positions + 4*numObjects, vbodptr_rgb + 4*numObjects, scene_scale);
+	}
+	else { //IF GPU
+		src_pc->pointCloudToVBOGPU(vbodptr_positions, vbodptr_rgb, scene_scale);
+		target_pc->pointCloudToVBOGPU(vbodptr_positions + 4*numObjects, vbodptr_rgb + 4*numObjects, scene_scale);
 	}
 }
 

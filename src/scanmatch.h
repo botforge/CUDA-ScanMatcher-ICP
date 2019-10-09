@@ -29,4 +29,5 @@ namespace ScanMatch {
 	void stepICPGPU_NAIVE();
 	void findNNGPU_NAIVE(pointcloud* src, pointcloud* target, float* dist, int* indicies, int N);
 	void reshuffleGPU(pointcloud* a, int* indicies, int N);
+	void bestFitTransformGPU(pointcloud* src, pointcloud* target, int N, glm::mat3 &R, glm::vec3 &t);
 } 

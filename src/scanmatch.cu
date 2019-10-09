@@ -98,51 +98,6 @@ void ScanMatch::copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb
 * stepSimulation *
 ******************/
 
-/**
-* LOOK-1.2 You can use this as a helper for kernUpdateVelocityBruteForce.
-* __device__ code can be called from a __global__ context
-* Compute the new velocity on the body with index `iSelf` due to the `N` boids
-* in the `pos` and `vel` arrays.
-*/
-__device__ glm::vec3 computeVelocityChange(int N, int iSelf, const glm::vec3 *pos, const glm::vec3 *vel) {
-  // Rule 1: boids fly towards their local perceived center of mass, which excludes themselves
-  // Rule 2: boids try to stay a distance d away from each other
-  // Rule 3: boids try to match the speed of surrounding boids
-  return glm::vec3(0.0f, 0.0f, 0.0f);
-}
-
-__global__ void kernUpdateVelocityBruteForce(int N, glm::vec3 *pos,
-  glm::vec3 *vel1, glm::vec3 *vel2) {
-  // Compute a new velocity based on pos and vel1
-  // Clamp the speed
-  // Record the new velocity into vel2. Question: why NOT vel1?
-}
-
-/**
-* LOOK-1.2 Since this is pretty trivial, we implemented it for you.
-* For each of the `N` bodies, update its position based on its current velocity.
-*/
-__global__ void kernUpdatePos(int N, float dt, glm::vec3 *pos, glm::vec3 *vel) {
-  // Update position by velocity
-  int index = threadIdx.x + (blockIdx.x * blockDim.x);
-  if (index >= N) {
-    return;
-  }
-  glm::vec3 thisPos = pos[index];
-  thisPos += vel[index] * dt;
-
-  // Wrap the boids around so we don't lose them
-  thisPos.x = thisPos.x < -scene_scale ? scene_scale : thisPos.x;
-  thisPos.y = thisPos.y < -scene_scale ? scene_scale : thisPos.y;
-  thisPos.z = thisPos.z < -scene_scale ? scene_scale : thisPos.z;
-
-  thisPos.x = thisPos.x > scene_scale ? -scene_scale : thisPos.x;
-  thisPos.y = thisPos.y > scene_scale ? -scene_scale : thisPos.y;
-  thisPos.z = thisPos.z > scene_scale ? -scene_scale : thisPos.z;
-
-  pos[index] = thisPos;
-}
-
 void ScanMatch::endSimulation() {
 	src_pc->~pointcloud();
 	target_pc->~pointcloud();
@@ -328,6 +283,13 @@ void ScanMatch::bestFitTransform(pointcloud* src, pointcloud* target, int N, glm
 * GPU NAIVE SCANMATCHING *
 ******************/
 
+__global__ void kernUpdatePositions(glm::vec3* src_pos, glm::mat3 R, glm::vec3 t, int N) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+	  src_pos[idx] = R * src_pos[idx] + t;
+  }
+}
+
 /**
  * Main Algorithm for Running ICP on the GPU
  * Finds homogenous transform between src_pc and target_pc 
@@ -348,24 +310,20 @@ void ScanMatch::stepICPGPU_NAIVE() {
 	ScanMatch::findNNGPU_NAIVE(src_pc, target_pc, dist, indicies, numObjects);
 	ScanMatch::reshuffleGPU(target_pc, indicies, numObjects);
 	
-	/*
 
 	//2: Find Best Fit Transformation
 	glm::mat3 R;
 	glm::vec3 t;
-	ScanMatch::bestFitTransform(src_pc, target_pc, numObjects, R, t);
+	//ScanMatch::bestFitTransformGPU(src_pc, target_pc, numObjects, R, t);
 
 
-	//3: Update each src_point
-	glm::vec3* src_dev_pos = src_pc->dev_pos;
-	for (int i = 0; i < numObjects; ++i) {
-		src_dev_pos[i] = glm::transpose(R) * src_dev_pos[i] + t;
-	}
+	//3: Update each src_point via Kernel Call
+	dim3 fullBlocksPerGrid((numObjects + blockSize - 1) / blockSize);
+	kernUpdatePositions<<<fullBlocksPerGrid, blockSize>>>(src_pc->dev_pos, R, t, numObjects);
 
 	//cudaFree dist and indicies
 	cudaFree(dist);
 	cudaFree(indicies);
-	*/
 }
 
 /*
@@ -420,5 +378,85 @@ __global__ void kernReshuffleGPU(glm::vec3* pos, glm::vec3* matches, int *indici
 void ScanMatch::reshuffleGPU(pointcloud* a, int* indicies, int N) {
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 	kernReshuffleGPU<<<fullBlocksPerGrid, blockSize>>>(a->dev_pos, a->dev_matches, indicies, N);
+}
+
+__global__ void kernComputeNorms(glm::vec3* src_norm, glm::vec3* target_norm, glm::vec3* pos, glm::vec3* matches, glm::vec3 pos_centroid, glm::vec3 matches_centroid, int N) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+	  src_norm[idx] = pos[idx] - pos_centroid;
+	  target_norm[idx] = matches[idx] - matches_centroid;
+  }
+}
+
+__global__ void kernComputeHarray(glm::mat3* Harray, glm::vec3* src_norm, glm::vec3* target_norm, int N) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+	  Harray[idx] = glm::mat3((src_norm[idx] * target_norm[idx].x), (src_norm[idx] * target_norm[idx].y), (src_norm[idx] * target_norm[idx].z));
+  }
+}
+
+/**
+ * Calculates transform T that maps from src to target
+ * Assumes dev_matches is filled for target
+*/
+void ScanMatch::bestFitTransformGPU(pointcloud* src, pointcloud* target, int N, glm::mat3 &R, glm::vec3 &t){
+
+	glm::vec3* src_norm;
+	glm::vec3* target_norm;
+	glm::mat3* Harray;
+
+	//cudaMalloc Norms and Harray
+	cudaMalloc((void**)&src_norm, N * sizeof(glm::vec3));
+	cudaMalloc((void**)&target_norm, N * sizeof(glm::vec3));
+	cudaMalloc((void**)&Harray, N * sizeof(glm::mat3));
+
+	//Thrust device pointers for calculating centroids
+	thrust::device_ptr<glm::vec3> src_thrustpos(src->dev_pos);
+	thrust::device_ptr<glm::vec3> target_thrustmatches(target->dev_matches);
+
+	//1: Calculate centroids
+	glm::vec3 src_centroid(0.f);
+	glm::vec3 target_centroid(0.f);
+	src_centroid = glm::vec3(thrust::reduce(src_thrustpos, src_thrustpos + N, glm::vec3(0.f), thrust::plus<glm::vec3>()));
+	target_centroid = glm::vec3(thrust::reduce(target_thrustmatches, target_thrustmatches + N, glm::vec3(0.f), thrust::plus<glm::vec3>()));
+	src_centroid /= glm::vec3(N);
+	target_centroid /= glm::vec3(N);
+
+	//2: Compute Norm via Kernel Call
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	kernComputeNorms<<<fullBlocksPerGrid, blockSize>>>(src_norm, target_norm, src->dev_pos, target->dev_matches, src_centroid, target_centroid, N);
+
+	utilityCore::checkCUDAError("Compute Norms Failed", __LINE__);
+	cudaThreadSynchronize();
+
+	//3:Multiply src.T (3 x N) by target (N x 3) = H (3 x 3) via a kernel call
+	kernComputeHarray<<<fullBlocksPerGrid, blockSize>>>(Harray, src_norm, target_norm, N);
+	thrust::device_ptr<glm::mat3> Harray_thrustptr(Harray);
+	glm::mat3 H;
+	H = glm::mat3(thrust::reduce(Harray_thrustptr, Harray_thrustptr + N, glm::mat3(0.f), thrust::plus<glm::mat3>()));
+
+	utilityCore::checkCUDAError("Compute HARRAY Failed", __LINE__);
+	cudaThreadSynchronize();
+
+	//4:Calculate SVD of H to get U, S & V
+	float U[3][3] = { 0 };
+	float S[3][3] = { 0 };
+	float V[3][3] = { 0 };
+	svd(H[0][0], H[0][1], H[0][2], H[1][0], H[1][1], H[1][2], H[2][0], H[2][1], H[2][2],
+		U[0][0], U[0][1], U[0][2], U[1][0], U[1][1], U[1][2], U[2][0], U[2][1], U[2][2],
+		S[0][0], S[0][1], S[0][2], S[1][0], S[1][1], S[1][2], S[2][0], S[2][1], S[2][2],
+		V[0][0], V[0][1], V[0][2], V[1][0], V[1][1], V[1][2], V[2][0], V[2][1], V[2][2]
+		);
+	glm::mat3 matU(glm::vec3(U[0][0], U[1][0], U[2][0]), glm::vec3(U[0][1], U[1][1], U[2][1]), glm::vec3(U[0][2], U[1][2], U[2][2]));
+	glm::mat3 matV(glm::vec3(V[0][0], V[0][1], V[0][2]), glm::vec3(V[1][0], V[1][1], V[1][2]), glm::vec3(V[2][0], V[2][1], V[2][2]));
+
+	//5:Rotation Matrix and Translation Vector
+	R = (matU * matV);
+	t = target_centroid - R * (src_centroid);
+
+	//cudaMalloc Norms and Harray
+	cudaFree(src_norm);
+	cudaFree(target_norm); 
+	cudaFree(Harray);
 }
 

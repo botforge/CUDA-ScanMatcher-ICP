@@ -80,8 +80,9 @@ void ScanMatch::initSimulationGPU(int N , std::vector<glm::vec3> coords) {
 
 void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
   numObjects = N;
-  //First create the octree (put all OctNodes in device Memory)
-
+  //First create the octree 
+  octree = new Octree(glm::vec3(0.f, 0.f, 0.f), 4.f, coords);
+  octree->create();
 
   //Setup and initialize source and target pointcloud
   src_pc = new pointcloud(false, numObjects, true);

@@ -17,16 +17,28 @@
 #include <thrust/device_vector.h>
 #include "utilityCore.hpp"
 
-class OctNode {
-	OctNode* children[2][2][2]; //x, y, z
-	std::vector<int> tgt_indicies; //data 
-	glm::vec3 midpoint_pos; //global coordinates of midpoint
+typedef unsigned long long octKey;
+#define MAX_PTS_PER_OCTANT 2
+
+struct OctNode {
+	octKey firstChild;
+	unsigned int data_startidx;
+	unsigned int data_endidx;
+	glm::vec3 center;
+	float halfLength;
+	int count;
 	bool isLeaf;
 };
 
 class Octree {
 public:
-	OctNode* rootNode; //Actually a dev pointer 
-	Octree();
-	void create(std::vector<glm::vec3> coords);
+	float rootHalfLength;
+	glm::vec3 rootCenter;
+	std::vector<OctNode> octNodePool;
+	std::vector<glm::vec3> octCoords;
+	std::vector<glm::vec3> coords;
+	OctNode rootNode;
+	Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c);
+	void create();
+	void insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 center);
 };

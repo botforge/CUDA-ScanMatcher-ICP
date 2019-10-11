@@ -34,7 +34,7 @@
  * FOR WAYMO DATASET: 1 << 5;
 */
 
-#define scene_scale 1 << 4
+#define scene_scale 1 << 3
 
 /***********************************************
 * Kernel state (pointers are device pointers) *
@@ -87,19 +87,23 @@ void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
 
   //Extract Final Data from it
   int numElts = octree->stackPointer;
-  int numCoords = octree->octCoords.size();
-  glm::vec3* octoCoords = octree->octCoords.data();
+  int numCoords = octree->compactedCoords.size();
+  glm::vec3* octoCoords = octree->compactedCoords.data();
   OctNode* octNodePool = octree->octNodePool.data();
 
-  //Send stuff to device
+
+	printf("NUM ELTS %d \n", numCoords);
+	printf("numOBJECTS %d \n", numObjects);
+	
+	//Send stuff to device
 	glm::vec3* dev_octoCoords;
 	glm::vec3* dev_octNodePool;
 
-	cudaMalloc((void**)&dev_octoCoords, numCoords * sizeof(glm::vec3));
+	cudaMalloc((void**)&dev_octoCoords, numObjects * sizeof(glm::vec3));
 	cudaMalloc((void**)&dev_octNodePool, numElts * sizeof(OctNode));
 	utilityCore::checkCUDAError("cudaMalloc octor failed", __LINE__);
 
-	cudaMemcpy(dev_octoCoords, octoCoords, numCoords * sizeof(glm::vec3), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_octoCoords, octoCoords, numObjects * sizeof(glm::vec3), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_octNodePool, octNodePool, numElts * sizeof(OctNode), cudaMemcpyHostToDevice);
 	utilityCore::checkCUDAError("cudaMalloc octor failed", __LINE__);
 	
@@ -107,7 +111,8 @@ void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
   src_pc = new pointcloud(false, numObjects, true);
   src_pc->initGPU(coords);
   target_pc = new pointcloud(true, numObjects, true);
-  target_pc->initGPU(coords);
+  target_pc->initGPUWOCTREE(dev_octoCoords);
+  //target_pc->initGPU(coords);
 }
 
 /******************

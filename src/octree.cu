@@ -1,6 +1,6 @@
 #include "octree.h"
 
-Octree::Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c) : rootCenter(rCenter), rootHalfLength(rHalfLength), octNodePool(std::vector<OctNode>(c.size() * MAX_PTS_PER_OCTANT * 8)), octCoords(std::vector<glm::vec3>(c.size() * MAX_PTS_PER_OCTANT * 8)), coords(c), stackPointer(0), compactedCoords(std::vector<glm::vec3>()){
+Octree::Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c) : rootCenter(rCenter), rootHalfLength(rHalfLength), octNodePool(std::vector<OctNode>(c.size() * MULT * 8)), octCoords(std::vector<glm::vec3>(c.size() * MULT * 8)), coords(c), stackPointer(0), compactedCoords(std::vector<glm::vec3>()){
 	rootNode.firstChild = 0;
 	rootNode.data_startidx = 0;
 	rootNode.data_endidx = 0;
@@ -73,7 +73,7 @@ void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 
 						//printf("INDEXING LINE 71");
 						OctNode &newNode = octNodePool[newKey];
 						newNode.firstChild = 0;
-						newNode.data_startidx = (stackPointer/8) + (MAX_PTS_PER_OCTANT) * (x+2*y+4*z+1);
+						newNode.data_startidx = currOctNode.data_startidx + 1 + (MAX_PTS_PER_OCTANT) * (x+2*y+4*z+1);
 						newNode.center = newCenter;
 						newNode.halfLength = newHalfLength;
 						newNode.count = 0;

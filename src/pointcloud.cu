@@ -259,6 +259,33 @@ void pointcloud::initGPU(std::vector<glm::vec3> coords) {
 	}
 }
 
+void pointcloud::initGPUWOCTREE(glm::vec3* dev_octocoords) {
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	
+	//cudaMalloc position, matches & rgb arrays
+	dev_pos = dev_octocoords;
+
+	cudaMalloc((void**)&dev_matches, N * sizeof(glm::vec3));
+	utilityCore::checkCUDAErrorWithLine("cudaMalloc dev_matches failed");
+
+	cudaMalloc((void**)&dev_rgb, N * sizeof(glm::vec3));
+	utilityCore::checkCUDAErrorWithLine("cudaMalloc dev_rgb failed");
+
+	if (isTarget) {
+		kernSetRGB<<<fullBlocksPerGrid, blockSize>>>(dev_rgb, GREEN, N);
+	}
+	else {
+		kernSetRGB<<<fullBlocksPerGrid, blockSize>>>(dev_rgb, glm::vec3(0.f, 0.f, 0.f), N);
+		float angle = 0.1 * PI;
+		glm::vec3 axis(1.f, 0.f, 0.f);
+		//glm::vec3 t(1.0, 0.f, 0.f);
+		glm::vec3 t(9.0, 0.f, 0.f);
+		glm::mat4 rotationMatrix = glm::rotate(angle, axis);
+		kernRotTrans << <fullBlocksPerGrid, blockSize >> > (dev_pos, rotationMatrix, t, N);
+	}
+}
+
+
 void pointcloud::buildCoordsGPU(std::vector<glm::vec3> coords) {
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 	glm::vec3* coordPos = &coords[0];

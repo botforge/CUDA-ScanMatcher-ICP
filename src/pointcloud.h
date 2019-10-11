@@ -46,5 +46,7 @@ public:
 	void buildCoordsGPU(std::vector<glm::vec3> coords);
     void pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb, float s_scale);
 
+	
+	void initGPUWOCTREE(glm::vec3* dev_octocoords);
 	~pointcloud();
 };

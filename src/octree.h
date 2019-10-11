@@ -18,15 +18,16 @@
 #include "utilityCore.hpp"
 
 typedef unsigned long long octKey;
-#define MAX_PTS_PER_OCTANT 50
+#define MAX_PTS_PER_OCTANT 9
+#define MULT 10
 
 struct OctNode {
 	octKey firstChild;
-	unsigned int data_startidx;
-	unsigned int data_endidx;
+	long long data_startidx;
+	long long data_endidx;
 	glm::vec3 center;
 	float halfLength;
-	int count;
+	long long count;
 	bool isLeaf;
 };
 

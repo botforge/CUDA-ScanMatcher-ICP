@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
 void parseModel() {
 	int counter = 0;
-	std::ifstream waymoFile("../bunny.ply");
+	std::ifstream waymoFile("../simple_octree.txt");
 	std::string line;
 	printf("OPENING MODEL \n");
 	float x, y, z;
@@ -49,7 +49,7 @@ void parseModel() {
 		ss >> y;
 		ss >> z;
 		glm::vec3 point(x, y, z);
-		point *= 20.f;
+		//point *= 20.f;
 		coords.push_back(point);
 		++counter;
 	}

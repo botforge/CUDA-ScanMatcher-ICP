@@ -10,6 +10,9 @@ Octree::Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c) :
 	rootNode.count = 0;
 	rootNode.isLeaf = true;
 
+	//printf("INDEXING LINE 0");
+	//printf("SIZEOF C %d", c.size());
+	//printf("SIZEOF OCTNODEPOOL %d", octNodePool.size());
 	octNodePool[0] = (rootNode);
 }
 
@@ -19,6 +22,7 @@ Octree::Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c) :
 void Octree::create() {
 	octKey root = 1;
 	for (int i = 0; i < coords.size(); ++i) {
+		//printf("INDEXING LINE 23");
 		insert(root, coords[i], rootHalfLength, rootCenter);
 	}
 }
@@ -31,12 +35,14 @@ void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 
 	else {
 		fixkey = currKey;
 	}
+	//printf("INDEXING LINE 36");
 	OctNode &currOctNode = octNodePool[fixkey];
 
 	//Option 1:Check if we're at a leaf, then add the point
 	if (currOctNode.isLeaf) {
 		bool hasMaxData = currOctNode.count >= MAX_PTS_PER_OCTANT + 0;
 		if (!hasMaxData) { //If we haven't surpassed MAX_PTS_PER_OCTANT, just append the data
+			//printf("INDEXING LINE 43");
 			octCoords[currOctNode.data_startidx + currOctNode.count] = data;
 			currOctNode.count += 1;
 		}
@@ -64,6 +70,7 @@ void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 
 						newCenter.z = center.z + newHalfLength * (z ? 1 : -1);
 
 						//Update new entry in octNodePool
+						//printf("INDEXING LINE 71");
 						OctNode &newNode = octNodePool[newKey];
 						newNode.firstChild = 0;
 						newNode.data_startidx = (stackPointer/8) + (MAX_PTS_PER_OCTANT) * (x+2*y+4*z+1);
@@ -76,6 +83,7 @@ void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 
 			}
 			//2:Redistribute Points
 			for (int i = currOctNode.data_startidx; i < currOctNode.data_startidx + currOctNode.count; ++i) {
+				//printf("INDEXING LINE 84");
 				insert(currKey, octCoords[i], halfLength, center);
 			}
 			insert(currKey, data, halfLength, center);
@@ -110,11 +118,13 @@ void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 
 void Octree::compact() {
 	stackPointer += 8;
 	for (int i = 0; i < stackPointer; ++i) {
+		//printf("INDEXING LINE 119");
 		OctNode &currNode = octNodePool[i];
 		if (currNode.isLeaf) {
 			int currNodeStart = currNode.data_startidx;
 			int currNodeEnd = currNode.data_startidx + currNode.count;
 			for (int k = currNodeStart; k < currNodeEnd; ++k) {
+				//printf("INDEXING LINE 125");
 				glm::vec3 nodecord = octCoords[k];
 				currNode.data_startidx = compactedCoords.size();
 				compactedCoords.push_back(nodecord);

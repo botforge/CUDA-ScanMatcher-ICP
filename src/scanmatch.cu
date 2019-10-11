@@ -50,7 +50,7 @@ pointcloud* target_pc;
 pointcloud* src_pc;
 
 //OCTREE pointer (all octnodes lie in device memory)
-Octree* octree;
+//Octree* octree;
 
 /******************
 * initSimulation *
@@ -80,6 +80,7 @@ void ScanMatch::initSimulationGPU(int N , std::vector<glm::vec3> coords) {
 
 void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
   numObjects = N;
+  /*
   //First create the octree 
   octree = new Octree(glm::vec3(0.f, 0.f, 0.f), 4.f, coords);
   octree->create();
@@ -106,13 +107,13 @@ void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
 	cudaMemcpy(dev_octoCoords, octoCoords, numObjects * sizeof(glm::vec3), cudaMemcpyHostToDevice);
 	cudaMemcpy(dev_octNodePool, octNodePool, numElts * sizeof(OctNode), cudaMemcpyHostToDevice);
 	utilityCore::checkCUDAError("cudaMalloc octor failed", __LINE__);
-	
+	*/
   //Setup and initialize source and target pointcloud
   src_pc = new pointcloud(false, numObjects, true);
   src_pc->initGPU(coords);
   target_pc = new pointcloud(true, numObjects, true);
-  target_pc->initGPUWOCTREE(dev_octoCoords);
-  //target_pc->initGPU(coords);
+  //target_pc->initGPUWOCTREE(dev_octoCoords);
+  target_pc->initGPU(coords);
 }
 
 /******************

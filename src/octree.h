@@ -18,9 +18,10 @@
 #include "utilityCore.hpp"
 
 typedef unsigned long long octKey;
-#define MAX_PTS_PER_OCTANT 9
+#define MAX_PTS_PER_OCTANT 2
 #define MULT 10
 
+/*
 struct OctNode {
 	octKey firstChild;
 	long long data_startidx;
@@ -46,3 +47,4 @@ public:
 	void insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 center);
 	void compact();
 };
+*/

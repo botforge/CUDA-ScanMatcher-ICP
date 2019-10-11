@@ -18,9 +18,39 @@
 #include "utilityCore.hpp"
 
 typedef unsigned long long octKey;
-#define MAX_PTS_PER_OCTANT 2
+#define MAX_PTS_PER_OCTANT 50
 #define MULT 10
 
+struct OctNodeGPU {
+	int firstChildIdx;
+	int data_startIdx;
+	int count;
+	glm::vec3 center;
+	bool isLeaf;
+};
+
+struct OctNode {
+	int firstChildIdx;
+	std::vector<OctNode*> children;
+	std::vector<glm::vec3> data;
+	std::vector<int> data_idx;
+	glm::vec3 center;
+	float halfLength;
+	bool isLeaf;
+};
+
+class Octree {
+public:
+	OctNode* rootNode;
+	std::vector<OctNode*> nodePool;
+	std::vector<glm::vec3> coords;
+	std::vector<OctNodeGPU> gpuNodePool;
+	std::vector<glm::vec3> gpuCoords;
+	Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c);
+	void create();
+	void insert(octKey currKey, glm::vec3 data, int data_idx);
+	void compact();
+};
 /*
 struct OctNode {
 	octKey firstChild;

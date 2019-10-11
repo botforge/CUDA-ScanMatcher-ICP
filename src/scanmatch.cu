@@ -50,7 +50,9 @@ pointcloud* target_pc;
 pointcloud* src_pc;
 
 //OCTREE pointer (all octnodes lie in device memory)
-//Octree* octree;
+Octree* octree;
+OctNodeGPU *dev_octoNodes;
+glm::vec3 *dev_octoCoords;
 
 /******************
 * initSimulation *
@@ -80,40 +82,27 @@ void ScanMatch::initSimulationGPU(int N , std::vector<glm::vec3> coords) {
 
 void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
   numObjects = N;
-  /*
-  //First create the octree 
+  //First create the Octree 
   octree = new Octree(glm::vec3(0.f, 0.f, 0.f), 4.f, coords);
   octree->create();
   octree->compact();
 
-  //Extract Final Data from it
-  int numElts = octree->stackPointer;
-  int numCoords = octree->compactedCoords.size();
-  glm::vec3* octoCoords = octree->compactedCoords.data();
-  OctNode* octNodePool = octree->octNodePool.data();
+  //Extract Final Data from Octree
+  int numNodes = octree->gpuNodePool.size();
+  glm::vec3* octoCoords = octree->gpuCoords.data();
+  OctNodeGPU* octoNodes = octree->gpuNodePool.data();
 
+  //Send stuff to device
+  cudaMalloc((void**)&dev_octoNodes, numNodes * sizeof(OctNodeGPU));
+  utilityCore::checkCUDAError("cudaMalloc octor failed", __LINE__);
 
-	printf("NUM ELTS %d \n", numCoords);
-	printf("numOBJECTS %d \n", numObjects);
-	
-	//Send stuff to device
-	glm::vec3* dev_octoCoords;
-	glm::vec3* dev_octNodePool;
-
-	cudaMalloc((void**)&dev_octoCoords, numObjects * sizeof(glm::vec3));
-	cudaMalloc((void**)&dev_octNodePool, numElts * sizeof(OctNode));
-	utilityCore::checkCUDAError("cudaMalloc octor failed", __LINE__);
-
-	cudaMemcpy(dev_octoCoords, octoCoords, numObjects * sizeof(glm::vec3), cudaMemcpyHostToDevice);
-	cudaMemcpy(dev_octNodePool, octNodePool, numElts * sizeof(OctNode), cudaMemcpyHostToDevice);
-	utilityCore::checkCUDAError("cudaMalloc octor failed", __LINE__);
-	*/
-  //Setup and initialize source and target pointcloud
+  cudaMemcpy(dev_octoNodes, octoNodes, numNodes * sizeof(OctNodeGPU), cudaMemcpyHostToDevice);
+  utilityCore::checkCUDAError("cudaMemcpy octoNodes failed", __LINE__);
   src_pc = new pointcloud(false, numObjects, true);
   src_pc->initGPU(coords);
   target_pc = new pointcloud(true, numObjects, true);
   //target_pc->initGPUWOCTREE(dev_octoCoords);
-  target_pc->initGPU(coords);
+  target_pc->initGPU(octree->gpuCoords);
 }
 
 /******************

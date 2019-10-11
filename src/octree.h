@@ -18,7 +18,7 @@
 #include "utilityCore.hpp"
 
 typedef unsigned long long octKey;
-#define MAX_PTS_PER_OCTANT 2
+#define MAX_PTS_PER_OCTANT 10
 
 struct OctNode {
 	octKey firstChild;
@@ -38,6 +38,7 @@ public:
 	std::vector<glm::vec3> octCoords;
 	std::vector<glm::vec3> coords;
 	OctNode rootNode;
+	int stackPointer;
 	Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c);
 	void create();
 	void insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 center);

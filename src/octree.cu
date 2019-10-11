@@ -1,6 +1,6 @@
 #include "octree.h"
 
-Octree::Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c) : rootCenter(rCenter), rootHalfLength(rHalfLength), octNodePool(std::vector<OctNode>(coords.size() * MAX_PTS_PER_OCTANT)), octCoords(std::vector<glm::vec3>(coords.size())), coords(c) {
+Octree::Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c) : rootCenter(rCenter), rootHalfLength(rHalfLength), octNodePool(std::vector<OctNode>(c.size() * MAX_PTS_PER_OCTANT * 8)), octCoords(std::vector<glm::vec3>(c.size() * MAX_PTS_PER_OCTANT * 8)), coords(c), stackPointer(0){
 	rootNode.firstChild = 0;
 	rootNode.data_startidx = 0;
 	rootNode.data_endidx = 0;
@@ -10,7 +10,7 @@ Octree::Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c) :
 	rootNode.count = 0;
 	rootNode.isLeaf = true;
 
-	octNodePool.push_back(rootNode);
+	octNodePool[0] = (rootNode);
 }
 
 /**
@@ -24,18 +24,26 @@ void Octree::create() {
 }
 
 void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 center) {
-	OctNode currOctNode = octNodePool[currKey - 1];
-	
+	long long fixkey;
+	if (currKey == 1) {
+		fixkey = currKey - 1;
+	}
+	else {
+		fixkey = currKey;
+	}
+	OctNode &currOctNode = octNodePool[fixkey];
+
 	//Option 1:Check if we're at a leaf, then add the point
 	if (currOctNode.isLeaf) {
 		bool hasMaxData = currOctNode.count >= MAX_PTS_PER_OCTANT + 0;
 		if (!hasMaxData) { //If we haven't surpassed MAX_PTS_PER_OCTANT, just append the data
-			octCoords[currOctNode.count] = data;
+			octCoords[currOctNode.data_startidx + currOctNode.count] = data;
 			currOctNode.count += 1;
 		}
 		else { //We have surpassed MAX_PTS_PER_OCTANT
 			//1:Subdivide 
-			octKey baseNewKey = currKey << 3;
+			stackPointer += 8;
+			octKey baseNewKey = stackPointer;
 			float newHalfLength = halfLength / 2.f;
 			currOctNode.firstChild = baseNewKey; //Reparent the child
 			currOctNode.isLeaf = false;
@@ -56,9 +64,9 @@ void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 
 						newCenter.z = center.z + newHalfLength * (z ? 1 : -1);
 
 						//Update new entry in octNodePool
-						OctNode newNode = octNodePool[newKey];
+						OctNode &newNode = octNodePool[newKey];
 						newNode.firstChild = 0;
-						newNode.data_startidx = (MAX_PTS_PER_OCTANT) * (x+2*y+4*z+1);
+						newNode.data_startidx = (stackPointer/8) + (MAX_PTS_PER_OCTANT) * (x+2*y+4*z+1);
 						newNode.center = newCenter;
 						newNode.halfLength = newHalfLength;
 						newNode.count = 0;
@@ -67,9 +75,10 @@ void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 
 				}
 			}
 			//2:Redistribute Points
-			for (int i = currOctNode.data_startidx; i < currOctNode.count; ++i) {
+			for (int i = currOctNode.data_startidx; i < currOctNode.data_startidx + currOctNode.count; ++i) {
 				insert(currKey, octCoords[i], halfLength, center);
 			}
+			insert(currKey, data, halfLength, center);
 		}
 	}
 	else { //Option 2: We're not at a leaf, so have to go one level deeper
@@ -80,7 +89,7 @@ void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 
 		uint8_t z = data.z > center.z;
 
 		//Update the code
-		octKey newKey = (currKey << 3) + (x + 2 * y + 4 * z);
+		octKey newKey = currOctNode.firstChild + (x + 2 * y + 4 * z);
 
 		//Update the halfLength
 		float newHalfLength = halfLength / 2.f;

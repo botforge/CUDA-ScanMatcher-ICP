@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
 void parseModel() {
 	int counter = 0;
-	std::ifstream waymoFile("../bigwaymo.txt");
+	std::ifstream waymoFile("../waymo.txt");
 	std::string line;
 	printf("OPENING MODEL \n");
 	float x, y, z;
@@ -133,7 +133,8 @@ bool init(int argc, char **argv) {
 #if CPU
 	ScanMatch::initSimulationCPU(TRUE_N, coords);
 #elif GPU_NAIVE
-	ScanMatch::initSimulationGPU(TRUE_N, coords);
+	//ScanMatch::initSimulationGPU(TRUE_N, coords);
+	ScanMatch::initSimulationGPUOCTREE(TRUE_N, coords);
 #endif
   updateCamera();
 

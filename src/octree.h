@@ -18,7 +18,7 @@
 #include "utilityCore.hpp"
 
 typedef unsigned long long octKey;
-#define MAX_PTS_PER_OCTANT 10
+#define MAX_PTS_PER_OCTANT 50
 
 struct OctNode {
 	octKey firstChild;

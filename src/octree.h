@@ -18,7 +18,7 @@
 #include "utilityCore.hpp"
 
 typedef unsigned long long octKey;
-#define MAX_PTS_PER_OCTANT 50
+#define MAX_PTS_PER_OCTANT 1000
 #define MULT 10
 
 struct OctNodeGPU {

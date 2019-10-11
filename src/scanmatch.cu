@@ -34,7 +34,7 @@
  * FOR WAYMO DATASET: 1 << 5;
 */
 
-#define scene_scale 1 << 3
+#define scene_scale 1 << 4
 
 /***********************************************
 * Kernel state (pointers are device pointers) *
@@ -83,7 +83,7 @@ void ScanMatch::initSimulationGPU(int N , std::vector<glm::vec3> coords) {
 void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
   numObjects = N;
   //First create the Octree 
-  octree = new Octree(glm::vec3(0.f, 0.f, 0.f), 4.f, coords);
+  octree = new Octree(glm::vec3(0.f, 0.f, 0.f), 1 << 4, coords);
   octree->create();
   octree->compact();
 
@@ -101,7 +101,6 @@ void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
   src_pc = new pointcloud(false, numObjects, true);
   src_pc->initGPU(coords);
   target_pc = new pointcloud(true, numObjects, true);
-  //target_pc->initGPUWOCTREE(dev_octoCoords);
   target_pc->initGPU(octree->gpuCoords);
 }
 
@@ -359,6 +358,44 @@ void ScanMatch::stepICPGPU_NAIVE() {
 	cudaFree(indicies);
 }
 
+/**
+ * Main Algorithm for Running ICP on the GPU w/Octree
+ * Finds homogenous transform between src_pc and target_pc 
+*/
+void ScanMatch::stepICPGPU_OCTREE() {
+	//cudaMalloc dist and indicies
+	float* dist;
+	int* indicies;
+
+	cudaMalloc((void**)&dist, numObjects * sizeof(float));
+	utilityCore::checkCUDAError("cudaMalloc dist failed", __LINE__);
+
+	cudaMalloc((void**)&indicies, numObjects * sizeof(int));
+	utilityCore::checkCUDAError("cudaMalloc indicies failed", __LINE__);
+	cudaMemset(dist, 0, numObjects * sizeof(float));
+	cudaMemset(indicies, -1, numObjects * sizeof(int));
+
+	//1: Find Nearest Neigbors and Reshuffle
+	ScanMatch::findNNGPU_OCTREE(src_pc, target_pc, dist, indicies, numObjects, dev_octoNodes);
+	//ScanMatch::findNNGPU_NAIVE(src_pc, target_pc, dist, indicies, numObjects);
+	cudaDeviceSynchronize();
+	ScanMatch::reshuffleGPU(target_pc, indicies, numObjects);
+	cudaDeviceSynchronize();
+	//2: Find Best Fit Transformation
+	glm::mat3 R;
+	glm::vec3 t;
+	ScanMatch::bestFitTransformGPU(src_pc, target_pc, numObjects, R, t);
+	cudaDeviceSynchronize();
+
+	//3: Update each src_point via Kernel Call
+	dim3 fullBlocksPerGrid((numObjects + blockSize - 1) / blockSize);
+	kernUpdatePositions<<<fullBlocksPerGrid, blockSize>>>(src_pc->dev_pos, R, t, numObjects);
+
+	//cudaFree dist and indicies
+	cudaFree(dist);
+	cudaFree(indicies);
+}
+
 /*
  * Parallely compute NN for each point in the pointcloud
  */
@@ -369,6 +406,63 @@ __global__ void kernNNGPU_NAIVE(glm::vec3* src_pos, glm::vec3* target_pos, float
 	  float idx_minDist = -1;
 	  glm::vec3 src_pt = src_pos[idx];
 	  for (int tgt_idx = 0; tgt_idx < N; ++tgt_idx) { //Iterate through each tgt & find closest
+		  glm::vec3 tgt_pt = target_pos[tgt_idx];
+		  float d = glm::distance(src_pt, tgt_pt);
+		  //float d = sqrtf(powf((tgt_pt.x - src_pt.x), 2.f) + powf((tgt_pt.y - src_pt.y), 2.f) + powf((tgt_pt.z - src_pt.z), 2.f));
+		  if (d < minDist) {
+			  minDist = d;
+			  idx_minDist = tgt_idx;
+		  }
+	  }
+	  dist[idx] = minDist;
+	  indicies[idx] = idx_minDist;
+  }
+}
+
+__device__ OctNodeGPU findLeafOctant(glm::vec3 src_pos, OctNodeGPU* octoNodes) {
+	octKey currKey = 0;
+	OctNodeGPU currNode = octoNodes[currKey];
+	OctNodeGPU parentNode = currNode;
+	//printf("SRC: %f, %f, %f \n", src_pos.x, src_pos.y, src_pos.z);
+	while (!currNode.isLeaf) {
+		//Determine which octant the point lies in (0 is bottom-back-left)
+		glm::vec3 center = currNode.center;
+		uint8_t x = src_pos.x > center.x;
+		uint8_t y = src_pos.y > center.y;
+		uint8_t z = src_pos.z > center.z;
+
+		//printf("currKey: %d\n", currKey);
+		//printf("currNodeBaseKey: %d\n", currNode.firstChildIdx);
+
+		//Update the code
+		currKey = currNode.firstChildIdx + (x + 2 * y + 4 * z);
+		parentNode = currNode;
+		currNode = octoNodes[currKey];
+	}
+	//printf("currKey: %d\n", currKey);
+	//printf("currNodeBaseKey: %d\n", currNode.firstChildIdx);
+
+	//printf("OCTANT CENTER: %f, %f, %f \n", currNode.center.x, currNode.center.y, currNode.center.z);
+	//printf("Data START: %d \n", currNode.data_startIdx);
+	return currNode;
+}
+
+/*
+ * Parallely compute NN for each point in the pointcloud
+ */
+__global__ void kernNNGPU_OCTREE(glm::vec3* src_pos, glm::vec3* target_pos, float* dist, int* indicies, int N, OctNodeGPU* octoNodes) {
+  int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+  if (idx < N) {
+	  float minDist = INFINITY;
+	  float idx_minDist = -1;
+	  glm::vec3 src_pt = src_pos[idx];
+	  
+	  //Find our leaf node and extract tgt_start and tgt_end from it
+	  OctNodeGPU currLeafOctant = findLeafOctant(src_pt, octoNodes);
+	  int tgt_start = currLeafOctant.data_startIdx;
+	  int tgt_end = currLeafOctant.data_startIdx + currLeafOctant.count;
+
+	  for (int tgt_idx = tgt_start; tgt_idx < tgt_end; ++tgt_idx) { //Iterate through each tgt & find closest
 		  glm::vec3 tgt_pt = target_pos[tgt_idx];
 		  float d = glm::distance(src_pt, tgt_pt);
 		  //float d = sqrtf(powf((tgt_pt.x - src_pt.x), 2.f) + powf((tgt_pt.y - src_pt.y), 2.f) + powf((tgt_pt.z - src_pt.z), 2.f));
@@ -393,6 +487,21 @@ void ScanMatch::findNNGPU_NAIVE(pointcloud* src, pointcloud* target, float* dist
 	//Launch a kernel (paralellely compute NN for each point)
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
 	kernNNGPU_NAIVE<<<fullBlocksPerGrid, blockSize>>>(src->dev_pos, target->dev_pos, dist, indicies, N);
+}
+
+
+/**
+ * Finds Nearest Neighbors of target pc in src pc
+ * @args: src, target -> PointClouds w/ filled dev_pos IN GPU
+ * @returns: 
+	* dist -> N array -> ith index = dist(src[i], closest_point in target) (on GPU)
+	* indicies -> N array w/ ith index = index of the closest point in target to src[i] (on GPU)
+*/
+void ScanMatch::findNNGPU_OCTREE(pointcloud* src, pointcloud* target, float* dist, int *indicies, int N, OctNodeGPU* octoNodes) {
+	//Launch a kernel (paralellely compute NN for each point)
+	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
+	kernNNGPU_OCTREE<<<fullBlocksPerGrid, blockSize>>>(src->dev_pos, target->dev_pos, dist, indicies, N, octoNodes);
+
 }
 
 /*

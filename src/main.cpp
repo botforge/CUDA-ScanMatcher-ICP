@@ -4,11 +4,11 @@
 // Configuration
 // ================
 
-#define VISUALIZE 1
+#define VISUALIZE 0
 #define STEP true
 #define CPU false
-#define GPU_NAIVE true
-#define GPU_OCTREE false
+#define GPU_NAIVE false
+#define GPU_OCTREE true
 #define MODEL true;
 #define UNIFORM_GRID 0
 #define COHERENT_GRID 0
@@ -38,7 +38,9 @@ int main(int argc, char* argv[]) {
 
 void parseModel() {
 	int counter = 0;
-	std::ifstream waymoFile("../bunny.ply");
+	std::ifstream waymoFile("../bigwaymo.txt");
+	//std::ifstream waymoFile("../bunny.ply");
+	//std::ifstream waymoFile("../bigwaymo.txt");
 	std::string line;
 	printf("OPENING MODEL \n");
 	float x, y, z;
@@ -49,7 +51,7 @@ void parseModel() {
 		ss >> y;
 		ss >> z;
 		glm::vec3 point(x, y, z);
-		point *= 20.f;
+		//point *= 20.f;
 		coords.push_back(point);
 		++counter;
 	}
@@ -133,7 +135,8 @@ bool init(int argc, char **argv) {
 #if CPU
 	ScanMatch::initSimulationCPU(TRUE_N, coords);
 #elif GPU_NAIVE
-	//ScanMatch::initSimulationGPU(TRUE_N, coords);
+	ScanMatch::initSimulationGPU(TRUE_N, coords);
+#elif GPU_OCTREE
 	ScanMatch::initSimulationGPUOCTREE(TRUE_N, coords);
 #endif
   updateCamera();
@@ -226,6 +229,8 @@ void initShaders(GLuint * program) {
 		ScanMatch::stepICPCPU();
 	#elif GPU_NAIVE
 		ScanMatch::stepICPGPU_NAIVE();
+	#elif GPU_OCTREE
+		ScanMatch::stepICPGPU_OCTREE();
 	#endif
 	}
     #if VISUALIZE

@@ -34,4 +34,6 @@ namespace ScanMatch {
 
 	//GPU OCTREE SCANMATCHING
     void initSimulationGPUOCTREE(int N, std::vector<glm::vec3> coords);
+	void stepICPGPU_OCTREE();
+	void findNNGPU_OCTREE(pointcloud* src, pointcloud* target, float* dist, int* indicies, int N, OctNodeGPU* octoNodes);
 } 

@@ -1,6 +1,6 @@
 #include "octree.h"
 
-Octree::Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c) : rootCenter(rCenter), rootHalfLength(rHalfLength), octNodePool(std::vector<OctNode>(c.size() * MAX_PTS_PER_OCTANT * 8)), octCoords(std::vector<glm::vec3>(c.size() * MAX_PTS_PER_OCTANT * 8)), coords(c), stackPointer(0){
+Octree::Octree(glm::vec3 rCenter, float rHalfLength, std::vector<glm::vec3> c) : rootCenter(rCenter), rootHalfLength(rHalfLength), octNodePool(std::vector<OctNode>(c.size() * MAX_PTS_PER_OCTANT * 8)), octCoords(std::vector<glm::vec3>(c.size() * MAX_PTS_PER_OCTANT * 8)), coords(c), stackPointer(0), compactedCoords(std::vector<glm::vec3>()){
 	rootNode.firstChild = 0;
 	rootNode.data_startidx = 0;
 	rootNode.data_endidx = 0;
@@ -102,4 +102,24 @@ void Octree::insert(octKey currKey, glm::vec3 data, float halfLength, glm::vec3 
 
 		insert(newKey, data, newHalfLength, newCenter);
 	}
+}
+
+/**
+* Compacts octCoords, delete everything after stackPOinte
+*/
+void Octree::compact() {
+	stackPointer += 8;
+	for (int i = 0; i < stackPointer; ++i) {
+		OctNode &currNode = octNodePool[i];
+		if (currNode.isLeaf) {
+			int currNodeStart = currNode.data_startidx;
+			int currNodeEnd = currNode.data_startidx + currNode.count;
+			for (int k = currNodeStart; k < currNodeEnd; ++k) {
+				glm::vec3 nodecord = octCoords[k];
+				currNode.data_startidx = compactedCoords.size();
+				compactedCoords.push_back(nodecord);
+			}
+		}
+	}
+	octNodePool.resize(stackPointer);
 }

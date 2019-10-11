@@ -83,7 +83,26 @@ void ScanMatch::initSimulationGPUOCTREE(int N , std::vector<glm::vec3> coords) {
   //First create the octree 
   octree = new Octree(glm::vec3(0.f, 0.f, 0.f), 4.f, coords);
   octree->create();
+  octree->compact();
 
+  //Extract Final Data from it
+  int numElts = octree->stackPointer;
+  int numCoords = octree->octCoords.size();
+  glm::vec3* octoCoords = octree->octCoords.data();
+  OctNode* octNodePool = octree->octNodePool.data();
+
+  //Send stuff to device
+	glm::vec3* dev_octoCoords;
+	glm::vec3* dev_octNodePool;
+
+	cudaMalloc((void**)&dev_octoCoords, numCoords * sizeof(glm::vec3));
+	cudaMalloc((void**)&dev_octNodePool, numElts * sizeof(OctNode));
+	utilityCore::checkCUDAError("cudaMalloc octor failed", __LINE__);
+
+	cudaMemcpy(dev_octoCoords, octoCoords, numCoords * sizeof(glm::vec3), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_octNodePool, octNodePool, numElts * sizeof(OctNode), cudaMemcpyHostToDevice);
+	utilityCore::checkCUDAError("cudaMalloc octor failed", __LINE__);
+	
   //Setup and initialize source and target pointcloud
   src_pc = new pointcloud(false, numObjects, true);
   src_pc->initGPU(coords);
@@ -502,4 +521,3 @@ void ScanMatch::bestFitTransformGPU(pointcloud* src, pointcloud* target, int N, 
 	cudaFree(target_norm); 
 	cudaFree(Harray);
 }
-

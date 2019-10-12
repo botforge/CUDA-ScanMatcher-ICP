@@ -16,6 +16,7 @@ ________________________________________________________________________________
 Table of contents
 =================
    * [Scan Matching Algorithm](#scan-matching-algorithm)
+   * [Results] (#results)
   * [Optimizations](#optimizations)
     * [Stream compaction to remove terminated rays](#stream-compaction-to-remove-terminated-rays)
     * [First bounce caching](#first-bounce-caching)
@@ -36,3 +37,10 @@ def scan_match(pointcloud A, pointcloud B):
   4. Repeat steps 1-3 until some epsilon convergence
   RETURN : Some Transformation matrix T
 ```
+# Results
+| Diffuse | Reflective | Refractive |
+| ------------- | ----------- |----------- |
+| ![](img/bunnytrue.gif)  | ![](img/buddhatrue.gif) | ![](img/dragontrue.gif) |
+
+# Optimizations
+## Level 0: Baseline CPU Implementation

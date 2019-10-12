@@ -4,7 +4,7 @@
 // Configuration
 // ================
 
-#define VISUALIZE 0
+#define VISUALIZE 1
 #define STEP true
 #define CPU false
 #define GPU_NAIVE false
@@ -38,8 +38,8 @@ int main(int argc, char* argv[]) {
 
 void parseModel() {
 	int counter = 0;
-	std::ifstream waymoFile("../bigwaymo.txt");
-	//std::ifstream waymoFile("../bunny.ply");
+	//std::ifstream waymoFile("../bigwaymo.txt");
+	std::ifstream waymoFile("../buddha.ply");
 	//std::ifstream waymoFile("../bigwaymo.txt");
 	std::string line;
 	printf("OPENING MODEL \n");
@@ -51,7 +51,7 @@ void parseModel() {
 		ss >> y;
 		ss >> z;
 		glm::vec3 point(x, y, z);
-		//point *= 20.f;
+		point *= 20.f;
 		coords.push_back(point);
 		++counter;
 	}

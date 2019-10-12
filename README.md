@@ -12,3 +12,20 @@ ________________________________________________________________________________
 <p align="center">
   <img  src="img/waymotrue.gif">
 </p>
+
+Table of contents
+=================
+   * [Scan Matching Algorithm](#scan-matching-algorithm)
+  * [Optimizations](#optimizations)
+    * [Stream compaction to remove terminated rays](#stream-compaction-to-remove-terminated-rays)
+    * [First bounce caching](#first-bounce-caching)
+    * [Sort by Material](#sort-by-material)
+   * [Questions](#questions)
+   * [Performance Analysis](#performance-analysis)
+   * [Credits & Acknowledgments](#credits)
+   
+# Scan Matching Algorithm
+Scan Matching seeks to align two similar pointclouds by finding the transformation between them. It does so via the following algorithm pseudocode:
+```bash
+INPUT: Two point clouds A & B
+```

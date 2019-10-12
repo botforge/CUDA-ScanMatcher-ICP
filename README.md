@@ -15,15 +15,11 @@ ________________________________________________________________________________
 
 Table of contents
 =================
-   * [Scan Matching Algorithm](#scan-matching-algorithm)
-   * [Results](#results)
-  * [Optimizations](#optimizations)
-    * [Stream compaction to remove terminated rays](#stream-compaction-to-remove-terminated-rays)
-    * [First bounce caching](#first-bounce-caching)
-    * [Sort by Material](#sort-by-material)
-   * [Questions](#questions)
-   * [Performance Analysis](#performance-analysis)
-   * [Credits & Acknowledgments](#credits)
+  * [Scan Matching Algorithm](#scan-matching-algorithm)
+  * [Results](#results)
+  * [Octree Optimization](#optimization)
+  * [Performance Analysis](#performance-analysis)
+  * [Credits & Acknowledgments](#credits)
    
 # Scan Matching Algorithm
 An intuitive understanding of Scan Matching is best illustrated in this 11 second [video](https://www.youtube.com/watch?v=uzOCS_gdZuM).
@@ -37,6 +33,8 @@ def scan_match(pointcloud A, pointcloud B):
   4. Repeat steps 1-3 until some epsilon convergence
   RETURN : Some Transformation matrix T
 ```
+The key benefit from CUDA is in step 1. Finding the nearest neighbors synchronously takes far longer than finding nearest neighbors via some optimized datastructure like an octree. I implemented 3 versions: A CPU version, a Naive CUDA version, and an Octree version.  
+
 # Results
 <p align="center">
   <img  src="img/bunnytrue.gif">
@@ -50,5 +48,8 @@ def scan_match(pointcloud A, pointcloud B):
   <img  src="img/dragontrue.gif">
 </p>
 
-# Optimizations
-## Level 0: Baseline CPU Implementation
+# Octree Optimization
+An octree is a 
+  <p align="center">
+    <img  src="img/https://developer.nvidia.com/sites/all/modules/custom/gpugems/books/GPUGems2/elementLinks/37_octree_03.jpg">
+  </p>

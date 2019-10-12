@@ -1,4 +1,4 @@
-CUDA Scan Matcher via the Iterative Closest Point Algorithm - OCTREE OPTIMIZED
+CUDA Scan Matcher via the Iterative Closest Point 
 ===============================================================================
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture**

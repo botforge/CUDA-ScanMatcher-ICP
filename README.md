@@ -25,7 +25,10 @@ Table of contents
    * [Credits & Acknowledgments](#credits)
    
 # Scan Matching Algorithm
-Scan Matching seeks to align two similar pointclouds by finding the transformation between them. It does so via the following algorithm pseudocode:
-```bash
-INPUT: Two point clouds A & B
+Scan Matching seeks to align two similar pointclouds by finding the transformation between them. It does so via the iterative closest point algorithm outlined below pseudocode:
+```python
+#Aligns pointcloud A to pointcloud B
+func scan_match(pointcloud A, pointcloud B):
+  1. Find nearest neighbors between A & B
+  2. 
 ```

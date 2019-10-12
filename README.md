@@ -70,7 +70,7 @@ A sparse octree is an optimized datastructure that allows for fast nearest neigh
 | 250000     	| 861000 	| 14000     	| 400        	|
 
   ## Effect of Increasing NN on framerate
-  Below, we clearly see that the decrease in time across the algorithm directly contributes to an increase in framerate:
+  Below, we clearly see that the decrease in time across the algorithm directly contributes to an increase in framerate. Astonishingly, we see an over 1000% improvement over the CPU algorithm:
     <p align="center">
     <img  src="img/chart1.png">
   </p>

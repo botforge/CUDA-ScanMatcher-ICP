@@ -30,7 +30,7 @@ Scan Matching seeks to align two similar pointclouds by finding the transformati
 #Aligns pointcloud A to pointcloud B
 def scan_match(pointcloud A, pointcloud B):
   1. For each point in A, find the closest point in B
-  2. Compute a 3D transformation matrix that aligns the points using Least Squares Regression (Use SVD for 3x3 Matrices)
+  2. Compute a 3D transformation matrix that aligns the points (Use SVD & Least Squares Regression)
   3. Update all points in the target by the transformation matrix
   4. Repeat steps 1-3 until some epsilon convergence
   RETURN : Some Transformation matrix T

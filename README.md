@@ -25,7 +25,7 @@ Table of contents
    * [Credits & Acknowledgments](#credits)
    
 # Scan Matching Algorithm
-An intuitive understanding of Scan Matching is best illustrated in this 11 second [video](https://www.youtube.com/watch?v=uzOCS_gdZuM)
+An intuitive understanding of Scan Matching is best illustrated in this 11 second [video](https://www.youtube.com/watch?v=uzOCS_gdZuM).
 Scan Matching seeks to align two similar pointclouds by finding the transformation between them. It does so via the iterative closest point algorithm outlined below in pseudocode:
 ```bash
 #Aligns pointcloud A to pointcloud B

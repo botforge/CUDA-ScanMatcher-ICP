@@ -53,3 +53,24 @@ A sparse octree is an optimized datastructure that allows for fast nearest neigh
   <p align="center">
     <img  src="https://developer.nvidia.com/sites/all/modules/custom/gpugems/books/GPUGems2/elementLinks/37_octree_03.jpg">
   </p>
+  
+  # Performance Analysis
+  In order to test the varying number of points, I generated a 3D sinusoid with various widths, thereby increasing the number of points. 
+  ## Increasing speed of Nearest Neighbor Search
+  The table below illustrates the effect of each algorithm on the speed of nearest neighbor search. Clearly, the GPU-Octree performs NN the fastest, as it iterates only through points inside its octant. The Naive GPU iterates through all the points, but does so paralelly, and is therefore faster than the CPU that does so in a triple for loop sequentially.
+
+**Number of points vs Time Taken (ms) for Nearest Neighbor Search (lower is better)**
+  
+| Num Points 	| CPU    	| GPU-Naive 	| GPU-Octree 	|
+|------------	|--------	|-----------	|------------	|
+| 5          	| 0      	| 5         	| 8          	|
+| 500        	| 1268   	| 8         	| 3          	|
+| 2500       	| 23000  	| 573       	| 164        	|
+| 5000       	| 94000  	| 903       	| 193        	|
+| 250000     	| 861000 	| 14000     	| 400        	|
+
+  ## Effect of Increasing NN on framerate
+  Below, we clearly see that the decrease in time across the algorithm directly contributes to an increase in framerate:
+    <p align="center">
+    <img  src="https://developer.nvidia.com/sites/all/modules/custom/gpugems/books/GPUGems2/elementLinks/37_octree_03.jpg">
+  </p>

@@ -48,8 +48,8 @@ The key benefit from CUDA is in step 1. Finding the nearest neighbors synchronou
   <img  src="img/dragontrue.gif">
 </p>
 
-# Octree Optimization
-An octree is a 
+# Sparse Octree Optimization
+A sparse octree is an optimized datastructure that allows for fast nearest neighbor calculations. It is represented as a tree in which each internal node has exactly eight children. We use octrees in order to subdivide our 3D space, ensuring that no *octant* has more than *n* points. If some node has more than *n* vertices, we recursively subdivide this node by splitting it into eight children, and redistributing the points among these 8 children. This speeds up nearest neighbor searches as now, we only need to search for neighbors within our octant. 
   <p align="center">
     <img  src="https://developer.nvidia.com/sites/all/modules/custom/gpugems/books/GPUGems2/elementLinks/37_octree_03.jpg">
   </p>

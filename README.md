@@ -51,5 +51,5 @@ The key benefit from CUDA is in step 1. Finding the nearest neighbors synchronou
 # Octree Optimization
 An octree is a 
   <p align="center">
-    <img  src="img/https://developer.nvidia.com/sites/all/modules/custom/gpugems/books/GPUGems2/elementLinks/37_octree_03.jpg">
+    <img  src="https://developer.nvidia.com/sites/all/modules/custom/gpugems/books/GPUGems2/elementLinks/37_octree_03.jpg">
   </p>

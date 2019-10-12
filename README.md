@@ -10,5 +10,5 @@ ________________________________________________________________________________
 ![Developer](https://img.shields.io/badge/Developer-Dhruv-0f97ff.svg?style=flat) ![CUDA 10.1](https://img.shields.io/badge/CUDA-10.1-yellow.svg) ![Built](https://img.shields.io/appveyor/ci/gruntjs/grunt.svg) ![Issues](https://img.shields.io/badge/issues-none-green.svg)
 ____________________________________________________________________________________
 <p align="center">
-  <img  src="img/frontpage.png">
+  <img  src="img/waymotrue.gif">
 </p>

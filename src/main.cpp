@@ -9,11 +9,11 @@
 #define CPU false
 #define GPU_NAIVE false
 #define GPU_OCTREE true
-#define MODEL true;
+#define MODEL false;
 #define UNIFORM_GRID 0
 #define COHERENT_GRID 0
 
- int N_FOR_VIS = 100000;
+ int N_FOR_VIS = 5000;
  int TRUE_N = N_FOR_VIS / 2;
  float DT = 0.2f;
 
@@ -38,8 +38,8 @@ int main(int argc, char* argv[]) {
 
 void parseModel() {
 	int counter = 0;
-	//std::ifstream waymoFile("../bigwaymo.txt");
-	std::ifstream waymoFile("../buddha.ply");
+	std::ifstream waymoFile("../bigwaymo.txt");
+	//std::ifstream waymoFile("../buddha.ply");
 	//std::ifstream waymoFile("../bigwaymo.txt");
 	std::string line;
 	printf("OPENING MODEL \n");
@@ -51,7 +51,7 @@ void parseModel() {
 		ss >> y;
 		ss >> z;
 		glm::vec3 point(x, y, z);
-		point *= 20.f;
+		//point *= 20.f;
 		coords.push_back(point);
 		++counter;
 	}

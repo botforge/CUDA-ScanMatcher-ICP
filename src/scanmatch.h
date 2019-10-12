@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <chrono>
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <thrust/random.h>
@@ -11,7 +12,6 @@
 #include "pointcloud.h"
 #include "utilityCore.hpp"
 #include "octree.h"
-
 
 namespace ScanMatch {
     void copyPointCloudToVBO(float *vbodptr_positions, float *vbodptr_rgb, bool usecpu);

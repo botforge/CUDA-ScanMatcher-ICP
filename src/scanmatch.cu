@@ -54,6 +54,7 @@ Octree* octree;
 OctNodeGPU *dev_octoNodes;
 glm::vec3 *dev_octoCoords;
 
+
 /******************
 * initSimulation *
 ******************/
@@ -149,7 +150,12 @@ void ScanMatch::stepICPCPU() {
 	printf("NEAREST NEIGHBORS \n");
 #endif // DEBUG
 
+	auto start = std::chrono::high_resolution_clock::now();
 	ScanMatch::findNNCPU(src_pc, target_pc, dist, indicies, numObjects);
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start); 
+	std::cout << duration.count() << std::endl;
+
 #if DEBUG
 	printf("RESHUFFLE\n");
 #endif // DEBUG
@@ -339,8 +345,12 @@ void ScanMatch::stepICPGPU_NAIVE() {
 	cudaMemset(indicies, -1, numObjects * sizeof(int));
 
 	//1: Find Nearest Neigbors and Reshuffle
+	auto start = std::chrono::high_resolution_clock::now();
 	ScanMatch::findNNGPU_NAIVE(src_pc, target_pc, dist, indicies, numObjects);
 	cudaDeviceSynchronize();
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start); 
+	std::cout << duration.count() << std::endl;
 	ScanMatch::reshuffleGPU(target_pc, indicies, numObjects);
 	cudaDeviceSynchronize();
 	//2: Find Best Fit Transformation
@@ -376,9 +386,13 @@ void ScanMatch::stepICPGPU_OCTREE() {
 	cudaMemset(indicies, -1, numObjects * sizeof(int));
 
 	//1: Find Nearest Neigbors and Reshuffle
+	auto start = std::chrono::high_resolution_clock::now();
 	ScanMatch::findNNGPU_OCTREE(src_pc, target_pc, dist, indicies, numObjects, dev_octoNodes);
 	//ScanMatch::findNNGPU_NAIVE(src_pc, target_pc, dist, indicies, numObjects);
 	cudaDeviceSynchronize();
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start); 
+	std::cout << duration.count() << std::endl;
 	ScanMatch::reshuffleGPU(target_pc, indicies, numObjects);
 	cudaDeviceSynchronize();
 	//2: Find Best Fit Transformation

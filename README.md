@@ -26,7 +26,7 @@ Table of contents
    
 # Scan Matching Algorithm
 Scan Matching seeks to align two similar pointclouds by finding the transformation between them. It does so via the iterative closest point algorithm outlined below pseudocode:
-```python
+```bash
 #Aligns pointcloud A to pointcloud B
 def scan_match(pointcloud A, pointcloud B):
   1. For each point in A, find the closest point in B

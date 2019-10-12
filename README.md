@@ -1,11 +1,14 @@
-**University of Pennsylvania, CIS 565: GPU Programming and Architecture,
-Project 1 - Flocking**
+CUDA Scan Matcher via the Iterative Closest Point Algorithm - OCTREE OPTIMIZED
+===============================================================================
 
-* (TODO) YOUR NAME HERE
-  * (TODO) [LinkedIn](), [personal website](), [twitter](), etc.
-* Tested on: (TODO) Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
+**University of Pennsylvania, CIS 565: GPU Programming and Architecture**
 
-### (TODO: Your README)
+Dhruv Karthik: [LinkedIn](https://www.linkedin.com/in/dhruv_karthik/)
 
-Include screenshots, analysis, etc. (Remember, this is public, so don't put
-anything here that you don't want to share with the world.)
+Tested on: Windows 10 Home, Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz, 16GM, GTX 2070 - Compute Capability 7.5
+____________________________________________________________________________________
+![Developer](https://img.shields.io/badge/Developer-Dhruv-0f97ff.svg?style=flat) ![CUDA 10.1](https://img.shields.io/badge/CUDA-10.1-yellow.svg) ![Built](https://img.shields.io/appveyor/ci/gruntjs/grunt.svg) ![Issues](https://img.shields.io/badge/issues-none-green.svg)
+____________________________________________________________________________________
+<p align="center">
+  <img  src="img/frontpage.png">
+</p>

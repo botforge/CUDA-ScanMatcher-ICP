@@ -38,9 +38,17 @@ def scan_match(pointcloud A, pointcloud B):
   RETURN : Some Transformation matrix T
 ```
 # Results
-| Diffuse | Reflective | Refractive |
-| ------------- | ----------- |----------- |
-| ![](img/bunnytrue.gif)  | ![](img/buddhatrue.gif) | ![](img/dragontrue.gif) |
+<p align="center">
+  <img  src="img/bunnytrue.gif">
+</p>
+
+<p align="center">
+  <img  src="img/buddhatrue.gif">
+</p>
+
+<p align="center">
+  <img  src="img/dragontrue.gif">
+</p>
 
 # Optimizations
 ## Level 0: Baseline CPU Implementation

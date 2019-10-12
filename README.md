@@ -16,7 +16,7 @@ ________________________________________________________________________________
 Table of contents
 =================
    * [Scan Matching Algorithm](#scan-matching-algorithm)
-   * [Results] (#results)
+   * [Results](#results)
   * [Optimizations](#optimizations)
     * [Stream compaction to remove terminated rays](#stream-compaction-to-remove-terminated-rays)
     * [First bounce caching](#first-bounce-caching)

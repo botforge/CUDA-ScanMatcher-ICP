@@ -19,8 +19,9 @@ Table of contents
   * [Results](#results)
   * [Octree Optimization](#optimization)
   * [Performance Analysis](#performance-analysis)
-  * [Credits & Acknowledgments](#credits)
-   
+  * [Build Instructions](#build-instructions)
+  * [Runing The Code](#running-the-code)
+  
 # Scan Matching Algorithm
 An intuitive understanding of Scan Matching is best illustrated in this 11 second [video](https://www.youtube.com/watch?v=uzOCS_gdZuM).
 Scan Matching seeks to align two similar pointclouds by finding the transformation between them. It does so via the iterative closest point algorithm outlined below in pseudocode:
@@ -75,8 +76,9 @@ A sparse octree is an optimized datastructure that allows for fast nearest neigh
     <img  src="img/chart1.png">
   </p>
   
-  ## Build Instructions (Taken from CIS 565 Getting Started Instructions)
+  ## Build Instructions 
   ### Windows
+  Taken from CIS 565 Getting Started Instructions
 1. In Git Bash, navigate to your cloned project directory.
 2. Create a `build` directory: `mkdir build`
    * (This "out-of-source" build makes it easy to delete the `build` directory

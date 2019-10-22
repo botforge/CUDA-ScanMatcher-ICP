@@ -74,3 +74,60 @@ A sparse octree is an optimized datastructure that allows for fast nearest neigh
     <p align="center">
     <img  src="img/chart1.png">
   </p>
+  
+  ## Build Instructions (Taken from CIS 565 Getting Started Instructions)
+  ### Windows
+1. In Git Bash, navigate to your cloned project directory.
+2. Create a `build` directory: `mkdir build`
+   * (This "out-of-source" build makes it easy to delete the `build` directory
+     and try again if something goes wrong with the configuration.)
+3. Navigate into that directory: `cd build`
+4. Open the CMake GUI to configure the project:
+   * `cmake-gui ..` or `"C:\Program Files (x86)\cmake\bin\cmake-gui.exe" ..`
+     * Don't forget the `..` part! This tells CMake that the `CMakeLists.txt` file is in the parent directory of `build`.
+   * Make sure that the "Source" directory points to the directory `cuda-getting-started`.
+   * Click *Configure*.
+      * Select `Visual Studio 15 2017, Win641`.
+        (**NOTE:** you must use Win64, as we don't provide libraries for Win32.)
+      * *Optionally*, if the 2017 build ends being unstable, type in `v140` in the `Optional toolset to use` bar. This will use VS2015 build tools.
+   * Click *Generate*.
+5. If generation was successful, there should now be a Visual Studio solution
+   (`.sln`) file in the `build` directory that you just created. Open this.
+   (from the command line: `explorer *.sln`)
+6. Build. (Note that there are Debug and Release configuration options.)
+7. Run. Make sure you run the `cis565_` target (not `ALL_BUILD`) by
+   right-clicking it and selecting "Set as StartUp Project".
+   * If you have switchable graphics (NVIDIA Optimus), you may need to force
+     your program to run with only the NVIDIA card. In NVIDIA Control Panel,
+     under "Manage 3D Settings," set "Multi-display/Mixed GPU acceleration"
+     to "Single display performance mode".
+
+### Linux
+It is recommended that you use Nsight. Nsight is shipped with CUDA. If you set up the environment path correctly `export PATH=/usr/local/cuda-10.0/bin${PATH:+:${PATH}}` (Note that simply typing the `export` command is a temporary change. The `PATH` variable won't be updated permanently. For permanent change, add it to your shell configuration file, e.g. `~/.profile` on Ubuntu), you can run Nsight by typing `nsight` in your terminal.
+
+1. Open Nsight. Set the workspace to the one *containing* your cloned repo.
+2. *File->Import...->General->Existing Projects Into Workspace*.
+   * Select the `cuda-getting-started` directory as the *root directory*.
+3. Select the *cis565-* project in the Project Explorer. Right click the project. Select *Build Project*.
+   * For later use, note that you can select various Debug and Release build
+     configurations under *Project->Build Configurations->Set Active...*.
+4. If you see an error like `CUDA_SDK_ROOT_DIR-NOTFOUND`:
+   * In a terminal, navigate to the build directory, then run: `cmake-gui ..`
+   * Set `CUDA_SDK_ROOT_DIR` to your CUDA install path.
+     This will be something like: `/usr/local/cuda`
+   * Click *Configure*, then *Generate*.
+5. Right click and *Refresh* the project.
+6. From the *Run* menu, *Run*. Select "Local C/C++ Application" and the
+   `cis565_` binary.
+   
+  ## Running the Code
+  The file `main.cpp` should have the following at the top:
+  ```C
+#define VISUALIZE 1
+#define STEP true
+#define CPU false
+#define GPU_NAIVE true
+#define GPU_OCTREE false
+#define MODEL true;
+  ```
+ To test the `GPU_NAIVE`, set it to True, and set `GPU_OCTREE` to False. Do the opposite to test `GPU_OCTREE`. `GPU_OCTREE` should be way faster, but is also a bit more sensitive to initialization.

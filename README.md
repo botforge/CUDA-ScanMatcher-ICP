@@ -132,4 +132,5 @@ It is recommended that you use Nsight. Nsight is shipped with CUDA. If you set u
 #define GPU_OCTREE false
 #define MODEL true;
   ```
- To test the `GPU_NAIVE`, set it to True, and set `GPU_OCTREE` to False. Do the opposite to test `GPU_OCTREE`. `GPU_OCTREE` should be way faster, but is also a bit more sensitive to initialization.
+ To test the `GPU_NAIVE`, set it to True, and set `GPU_OCTREE` to False. Do the opposite to test `GPU_OCTREE`. `GPU_OCTREE` should be way faster, but is also a bit more sensitive to initialization. If you're having convergence difficulties with `GPU_OCTREE`, some rules of thumbs are:
+  1. Tune the `#define MAX_PTS_PER_OCTANT` inside `octree.h`. 

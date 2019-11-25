@@ -20,7 +20,7 @@ Table of contents
   * [Octree Optimization](#optimization)
   * [Performance Analysis](#performance-analysis)
   * [Build Instructions](#build-instructions)
-  * [Runing The Code](#running-the-code)
+  * [Running The Code](#running-the-code)
   
 # Scan Matching Algorithm
 An intuitive understanding of Scan Matching is best illustrated in this 11 second [video](https://www.youtube.com/watch?v=uzOCS_gdZuM).

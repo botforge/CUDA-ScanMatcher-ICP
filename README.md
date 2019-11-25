@@ -17,7 +17,7 @@ Table of contents
 =================
   * [Scan Matching Algorithm](#scan-matching-algorithm)
   * [Results](#results)
-  * [Octree Optimization](#optimization)
+  * [Octree Optimization](#sparse-octree-optimization)
   * [Performance Analysis](#performance-analysis)
   * [Build Instructions](#build-instructions)
   * [Running The Code](#running-the-code)

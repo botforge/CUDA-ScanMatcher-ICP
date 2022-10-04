@@ -313,6 +313,7 @@ void pointcloud::pointCloudToVBOGPU(float *vbodptr_positions, float *vbodptr_rgb
 pointcloud::~pointcloud() {
 	if (isGPU) {
 		cudaFree(dev_pos);
+		cudaFree(dev_matches);
 		cudaFree(dev_rgb);
 	}
 	else {

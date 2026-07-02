@@ -1,6 +1,4 @@
-#pragma once
 #include "pointcloud.h"
-#include <cuda.h>
 
 #define blockSize 128
 #define checkCUDAErrorWithLine(msg) checkCUDAError(msg, __LINE__)
@@ -206,8 +204,8 @@ void pointcloud::pointCloudToVBOCPU(float *vbodptr_positions, float *vbodptr_rgb
 
 	//Launching Kernels
 	dim3 fullBlocksPerGrid((N + blockSize - 1) / blockSize);
-	kernCopyPositionsToVBO << <fullBlocksPerGrid, blockSize >> >(N, tempPos, vbodptr_positions, s_scale, vbo_offset);
-	kernCopyRGBToVBO << <fullBlocksPerGrid, blockSize >> >(N, tempRGB, vbodptr_rgb, s_scale, vbo_offset);
+	kernCopyPositionsToVBO <<<fullBlocksPerGrid, blockSize >>>(N, tempPos, vbodptr_positions, s_scale, vbo_offset);
+	kernCopyRGBToVBO <<<fullBlocksPerGrid, blockSize >>>(N, tempRGB, vbodptr_rgb, s_scale, vbo_offset);
 	utilityCore::checkCUDAErrorWithLine("copyPointCloudToVBO failed!");
 	cudaDeviceSynchronize();
 
@@ -274,7 +272,7 @@ void pointcloud::buildCoordsGPU(std::vector<glm::vec3> coords) {
 		glm::vec3 t(9.0f, 0.f, 0.f);
 		//glm::vec3 t(0.8f, 0.f, 0.f);
 		glm::mat4 rotationMatrix = glm::rotate(angle, axis);
-		kernRotTrans << <fullBlocksPerGrid, blockSize >> > (dev_pos, rotationMatrix, t, N);
+		kernRotTrans <<<fullBlocksPerGrid, blockSize >>> (dev_pos, rotationMatrix, t, N);
 	}
 }
 

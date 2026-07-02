@@ -5,15 +5,17 @@
  * @date      2019
  */
 #pragma once
-#include <glm/glm.hpp>
 #include <stdio.h>
 #include <stdio.h>
 #include <cmath>
-#include <cuda.h>
+#include "cuda_to_hip.h"
+// Include Thrust BEFORE glm_device.h (rocThrust backend selection)
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <thrust/random.h>
 #include <thrust/device_vector.h>
+// Include GLM with device support AFTER Thrust
+#include "glm_device.h"
 #include "utilityCore.hpp"
 
 class pointcloud {

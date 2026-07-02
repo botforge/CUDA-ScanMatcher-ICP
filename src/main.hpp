@@ -7,8 +7,7 @@
 #include <fstream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
+#include "cuda_to_hip.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "utilityCore.hpp"
@@ -29,6 +28,10 @@ GLuint boidVBO_velocities = 0;
 GLuint boidIBO = 0;
 GLuint displayImage;
 GLuint program[2];
+
+// Graphics resources for GPU-GL interop
+cudaGraphicsResource_t positionsResource = nullptr;
+cudaGraphicsResource_t velocitiesResource = nullptr;
 
 const unsigned int PROG_BOID = 0;
 

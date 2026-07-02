@@ -1,9 +1,6 @@
-#define GLM_FORCE_CUDA
 #include <stdio.h>
-#include <cuda.h>
 #include <cmath>
-#include <glm/glm.hpp>
-#include "utilityCore.hpp"
+#include "cuda_to_hip.h"
 #include "scanmatch.h"
 #include "svd3.h"
 

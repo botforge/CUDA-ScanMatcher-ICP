@@ -155,7 +155,7 @@ inline void approximateGivensQuaternion(float a11, float a12, float a22, float &
 	// fast rsqrt function suffices
 	// rsqrt2 (https://code.google.com/p/lppython/source/browse/algorithm/HDcode/newCode/rsqrt.c?r=26)
 	// is even faster but results in too much error
-	float w = rsqrt(ch*ch + sh*sh);
+	float w = 1.0f / sqrtf(ch*ch + sh*sh);
 	ch = b ? w*ch : (float)_cstar;
 	sh = b ? w*sh : (float)_sstar;
 }
@@ -281,7 +281,7 @@ void QRGivensQuaternion(float a1, float a2, float &ch, float &sh)
 	ch = fabsf(a1) + fmaxf(rho, epsilon);
 	bool b = a1 < 0;
 	condSwap(b, sh, ch);
-	float w = rsqrt(ch*ch + sh*sh);
+	float w = 1.0f / sqrtf(ch*ch + sh*sh);
 	ch *= w;
 	sh *= w;
 }

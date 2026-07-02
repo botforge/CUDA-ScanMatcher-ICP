@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.18)
 project(cis565_ScanMatching)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -9,8 +9,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Enable C++11 for host code
-set(CMAKE_CXX_STANDARD 11)
+# Enable C++17 for host code (required for rocPRIM/rocThrust)
+set(CMAKE_CXX_STANDARD 17)
 
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -20,19 +20,30 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 ########################################
-# CUDA Setup
+# HIP/CUDA Setup
 ########################################
-find_package(CUDA 10 REQUIRED)
-include(${CMAKE_MODULE_PATH}/CUDAComputesList.cmake)
+option(USE_HIP "Build with HIP for AMD GPUs" OFF)
 
-list(APPEND CUDA_NVCC_FLAGS ${CUDA_GENERATE_CODE})
-list(APPEND CUDA_NVCC_FLAGS_DEBUG "-g -G")
-set(CUDA_VERBOSE_BUILD ON)
+if(USE_HIP)
+    # enable_language(HIP) honors -DCMAKE_HIP_ARCHITECTURES, else auto-detects the
+    # host GPU, else errors on a no-GPU host.
+    enable_language(HIP)
 
-if(WIN32)
-    # Set up include and lib paths
-    set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "Host side compiler used by NVCC" FORCE)
-endif(WIN32)
+    # rocThrust is a drop-in for CUDA Thrust
+    find_package(rocthrust REQUIRED)
+else()
+    find_package(CUDA 10 REQUIRED)
+    include(${CMAKE_MODULE_PATH}/CUDAComputesList.cmake)
+
+    list(APPEND CUDA_NVCC_FLAGS ${CUDA_GENERATE_CODE})
+    list(APPEND CUDA_NVCC_FLAGS_DEBUG "-g -G")
+    set(CUDA_VERBOSE_BUILD ON)
+
+    if(WIN32)
+        # Set up include and lib paths
+        set(CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "Host side compiler used by NVCC" FORCE)
+    endif(WIN32)
+endif()
 ########################################
 
 find_package(OpenGL REQUIRED)
@@ -62,7 +73,9 @@ find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
 set(headers
+    src/cuda_to_hip.h
     src/cudaMat4.hpp
+    src/glm_device.h
     src/glslUtility.hpp
     src/scanmatch.h
     src/octree.h
@@ -71,23 +84,37 @@ set(headers
     src/utilityCore.hpp
     )
 
-set(sources
-    src/glslUtility.cpp
+set(cuda_sources
     src/scanmatch.cu
     src/octree.cu
-    src/main.cpp
     src/pointcloud.cu
+    )
+
+set(sources
+    src/glslUtility.cpp
+    src/main.cpp
     src/utilityCore.cpp
     )
 
 list(SORT headers)
+list(SORT cuda_sources)
 list(SORT sources)
 
 source_group(Headers FILES ${headers})
-source_group(Sources FILES ${sources})
+source_group(Sources FILES ${sources} ${cuda_sources})
 
-cuda_add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers})
-target_link_libraries(${CMAKE_PROJECT_NAME} ${LIBRARIES})
+if(USE_HIP)
+    # Mark all sources as HIP language so they compile with hipcc
+    # This ensures HIP headers work correctly in all sources
+    set_source_files_properties(${cuda_sources} ${sources} PROPERTIES LANGUAGE HIP)
+
+    add_executable(${CMAKE_PROJECT_NAME} ${sources} ${cuda_sources} ${headers})
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE USE_HIP GLM_FORCE_CUDA)
+    target_link_libraries(${CMAKE_PROJECT_NAME} ${LIBRARIES} roc::rocthrust)
+else()
+    cuda_add_executable(${CMAKE_PROJECT_NAME} ${sources} ${cuda_sources} ${headers})
+    target_link_libraries(${CMAKE_PROJECT_NAME} ${LIBRARIES})
+endif()
 
 add_custom_command(
     TARGET ${CMAKE_PROJECT_NAME}

@@ -2,13 +2,14 @@
 
 #include <stdio.h>
 #include <chrono>
+#include <cmath>
+#include <vector>
+#include "cuda_to_hip.h"
+// Include Thrust BEFORE glm_device.h (rocThrust backend selection)
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <thrust/random.h>
 #include <thrust/device_vector.h>
-#include <cuda.h>
-#include <cmath>
-#include <vector>
 #include "pointcloud.h"
 #include "utilityCore.hpp"
 #include "octree.h"

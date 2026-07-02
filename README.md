@@ -121,7 +121,16 @@ It is recommended that you use Nsight. Nsight is shipped with CUDA. If you set u
 5. Right click and *Refresh* the project.
 6. From the *Run* menu, *Run*. Select "Local C/C++ Application" and the
    `cis565_` binary.
-   
+
+### AMD GPUs (ROCm/HIP)
+The project also builds for AMD GPUs through HIP. Configure with `USE_HIP=ON` and select the target architecture with `CMAKE_HIP_ARCHITECTURES` (for example `gfx90a` for CDNA2, `gfx1100` for RDNA3, `gfx1201` for RDNA4). A ROCm install (the compiler and the roc/hip libraries, including rocThrust) is required.
+```bash
+mkdir build && cd build
+cmake .. -DUSE_HIP=ON -DCMAKE_HIP_ARCHITECTURES=gfx90a -DCMAKE_PREFIX_PATH=/opt/rocm -DCMAKE_BUILD_TYPE=Release
+cmake --build . --parallel
+```
+The CUDA sources are translated to HIP through the `src/cuda_to_hip.h` compatibility header, so the same code compiles for NVIDIA (default) and AMD (`USE_HIP=ON`) GPUs.
+
   ## Running the Code
   The file `main.cpp` should have the following at the top:
   ```C

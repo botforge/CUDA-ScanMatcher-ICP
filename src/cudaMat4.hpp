@@ -1,7 +1,7 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <cuda_runtime.h>
+#include "cuda_to_hip.h"
 
 struct cudaMat3 {
     glm::vec3 x;

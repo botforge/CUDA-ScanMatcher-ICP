@@ -4,12 +4,12 @@
 // Configuration
 // ================
 
-#define VISUALIZE 1
+#define VISUALIZE 0
 #define STEP true
 #define CPU false
-#define GPU_NAIVE false
-#define GPU_OCTREE true
-#define MODEL false;
+#define GPU_NAIVE true
+#define GPU_OCTREE false
+#define MODEL 0
 #define UNIFORM_GRID 0
 #define COHERENT_GRID 0
 
@@ -75,6 +75,10 @@ bool init(int argc, char **argv) {
   int gpuDevice = 0;
   int device_count = 0;
   cudaGetDeviceCount(&device_count);
+
+  // Set the GPU device first
+  cudaSetDevice(gpuDevice);
+
   if (gpuDevice > device_count) {
     std::cout
     << "Error: GPU device number is greater than the number of devices!"
@@ -90,6 +94,7 @@ bool init(int argc, char **argv) {
   ss << projectName << " [SM " << major << "." << minor << " " << deviceProp.name << "]";
   deviceName = ss.str();
 
+#if VISUALIZE
   // Window setup stuff
   glfwSetErrorCallback(errorCallback);
 
@@ -124,12 +129,20 @@ bool init(int argc, char **argv) {
   // Initialize drawing state
   initVAO();
 
-  // Default to device ID 0. If you have more than one GPU and want to test a non-default one,
-  // change the device ID.
-  cudaGLSetGLDevice(0);
+  // Register GL buffers with CUDA/HIP using the graphics resource API
+  cudaError_t err1 = cudaGraphicsGLRegisterBuffer(&positionsResource, boidVBO_positions, cudaGraphicsRegisterFlagsNone);
+  if (err1 != cudaSuccess) {
+    std::cerr << "Warning: cudaGraphicsGLRegisterBuffer positions failed: " << cudaGetErrorString(err1) << std::endl;
+  }
+  cudaError_t err2 = cudaGraphicsGLRegisterBuffer(&velocitiesResource, boidVBO_velocities, cudaGraphicsRegisterFlagsNone);
+  if (err2 != cudaSuccess) {
+    std::cerr << "Warning: cudaGraphicsGLRegisterBuffer velocities failed: " << cudaGetErrorString(err2) << std::endl;
+  }
 
-  cudaGLRegisterBufferObject(boidVBO_positions);
-  cudaGLRegisterBufferObject(boidVBO_velocities);
+  updateCamera();
+  initShaders(program);
+  glEnable(GL_DEPTH_TEST);
+#endif
 
   // Initialize N-body simulation
 #if CPU
@@ -139,15 +152,11 @@ bool init(int argc, char **argv) {
 #elif GPU_OCTREE
 	ScanMatch::initSimulationGPUOCTREE(TRUE_N, coords);
 #endif
-  updateCamera();
-
-  initShaders(program);
-
-  glEnable(GL_DEPTH_TEST);
 
   return true;
 }
 
+#if VISUALIZE
 void initVAO() {
 
   std::unique_ptr<GLfloat[]> bodies{ new GLfloat[4 * (N_FOR_VIS)] };
@@ -208,20 +217,20 @@ void initShaders(GLuint * program) {
     }
   }
 
-  //====================================
-  // Main loop
-  //====================================
   void runCUDA() {
     // Map OpenGL buffer object for writing from CUDA on a single GPU
     // No data is moved (Win & Linux). When mapped to CUDA, OpenGL should not
     // use this buffer
 
-    float4 *dptr = NULL;
     float *dptrVertPositions = NULL;
     float *dptrVertVelocities = NULL;
+    size_t size;
 
-    cudaGLMapBufferObject((void**)&dptrVertPositions, boidVBO_positions);
-    cudaGLMapBufferObject((void**)&dptrVertVelocities, boidVBO_velocities);
+    // Map the graphics resources
+    cudaGraphicsResource_t resources[2] = {positionsResource, velocitiesResource};
+    cudaGraphicsMapResources(2, resources, 0);
+    cudaGraphicsResourceGetMappedPointer((void**)&dptrVertPositions, &size, positionsResource);
+    cudaGraphicsResourceGetMappedPointer((void**)&dptrVertVelocities, &size, velocitiesResource);
 
     // execute the kernel call Step Here
 	if (STEP) {
@@ -233,21 +242,18 @@ void initShaders(GLuint * program) {
 		ScanMatch::stepICPGPU_OCTREE();
 	#endif
 	}
-    #if VISUALIZE
     ScanMatch::copyPointCloudToVBO(dptrVertPositions, dptrVertVelocities, CPU);
-    #endif
     // unmap buffer object
-
-    cudaGLUnmapBufferObject(boidVBO_positions);
-    cudaGLUnmapBufferObject(boidVBO_velocities);
+    cudaGraphicsUnmapResources(2, resources, 0);
   }
+#endif
 
   void mainLoop() {
+#if VISUALIZE
     double fps = 0;
     double timebase = 0;
     int frame = 0;
 	int counter = 0;
-    //ScanMatch::unitTest(); 
 
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents();
@@ -272,7 +278,6 @@ void initShaders(GLuint * program) {
 
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      #if VISUALIZE
       glUseProgram(program[PROG_BOID]);
       glBindVertexArray(boidVAO);
       glPointSize((GLfloat)pointSize);
@@ -283,11 +288,27 @@ void initShaders(GLuint * program) {
       glBindVertexArray(0);
 
       glfwSwapBuffers(window);
-      #endif
 	  counter++;
     }
     glfwDestroyWindow(window);
     glfwTerminate();
+#else
+    // Non-visual mode: run a fixed number of ICP iterations
+    std::cout << "Running ICP in non-visual mode..." << std::endl;
+    const int NUM_ITERATIONS = 10;
+    for (int i = 0; i < NUM_ITERATIONS; i++) {
+      if (STEP) {
+#if CPU
+        ScanMatch::stepICPCPU();
+#elif GPU_NAIVE
+        ScanMatch::stepICPGPU_NAIVE();
+#elif GPU_OCTREE
+        ScanMatch::stepICPGPU_OCTREE();
+#endif
+      }
+    }
+    std::cout << "Completed " << NUM_ITERATIONS << " ICP iterations." << std::endl;
+#endif
   }
 
 
@@ -312,18 +333,23 @@ void initShaders(GLuint * program) {
       phi += (xpos - lastX) / width;
       theta -= (ypos - lastY) / height;
       theta = std::fmax(0.01f, std::fmin(theta, 3.14f));
+#if VISUALIZE
       updateCamera();
+#endif
     }
     else if (rightMousePressed) {
       zoom += (ypos - lastY) / height;
       zoom = std::fmax(0.1f, std::fmin(zoom, 5.0f));
+#if VISUALIZE
       updateCamera();
+#endif
     }
 
 	lastX = xpos;
 	lastY = ypos;
   }
 
+#if VISUALIZE
   void updateCamera() {
     cameraPosition.x = zoom * sin(phi) * sin(theta);
     cameraPosition.z = zoom * cos(theta);
@@ -341,3 +367,4 @@ void initShaders(GLuint * program) {
       glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
     }
   }
+#endif

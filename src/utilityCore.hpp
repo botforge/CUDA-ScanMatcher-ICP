@@ -4,7 +4,7 @@
 #include <istream>
 #include <ostream>
 #include <iterator>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include <random>
 #include <sstream>
 #include <string>
